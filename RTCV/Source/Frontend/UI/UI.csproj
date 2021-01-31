@@ -198,6 +198,7 @@
     <Compile Include="Components\Glitch Harvester\RTC_StockpileManager_Form.designer.cs">
       <DependentUpon>RTC_StockpileManager_Form.cs</DependentUpon>
     </Compile>
+    <Compile Include="Components\Memory Tools\Common.cs" />
     <Compile Include="Components\Memory Tools\RTC_DomainAnalytics_Form.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -374,12 +375,18 @@
       <DependentUpon>RTC_Test_Form.cs</DependentUpon>
     </Compile>
     <Compile Include="GameProtection.cs" />
+    <Compile Include="SortableBindingList.cs" />
+    <Compile Include="Extensions\NumberExtensions.cs" />
     <Compile Include="Input\Bindings.cs" />
     <Compile Include="Input\Gamepad.cs" />
     <Compile Include="Input\Gamepad360.cs" />
     <Compile Include="Input\Input.cs" />
+    <Compile Include="Input\InputEvent.cs" />
     <Compile Include="Input\IPCKeyInput.cs" />
     <Compile Include="Input\Keyboard.cs" />
+    <Compile Include="Input\LogicalButton.cs" />
+    <Compile Include="Input\ModifierKeys.cs" />
+    <Compile Include="Input\WorkingDictionary.cs" />
     <Compile Include="Modular\UI_CanvasForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -567,6 +574,9 @@
     <EmbeddedResource Include="Modular\UI_CanvasForm.resx">
       <DependentUpon>UI_CanvasForm.cs</DependentUpon>
     </EmbeddedResource>
+    <Compile Include="Modular\ComponentForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <EmbeddedResource Include="Modular\UI_ComponentFormSubForm.resx">
       <DependentUpon>UI_ComponentFormSubForm.cs</DependentUpon>
     </EmbeddedResource>

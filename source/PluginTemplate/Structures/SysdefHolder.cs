@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace StreamerBoard.Structures
+namespace EasyBlast.Structures
 {
     //For json
     public class SysDefHolder

@@ -1,4 +1,4 @@
-using StreamerBoard.UI;
+using EasyBlast.UI;
 using NLog;
 using RTCV.Common;
 using RTCV.CorruptCore;
@@ -6,7 +6,7 @@ using RTCV.NetCore;
 using System;
 using System.Windows.Forms;
 
-namespace StreamerBoard
+namespace EasyBlast
 {
     /// <summary>
     /// This lies on the Emulator(Client) side

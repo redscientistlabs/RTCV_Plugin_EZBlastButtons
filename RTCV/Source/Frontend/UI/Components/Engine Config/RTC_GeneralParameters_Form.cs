@@ -5,7 +5,7 @@ namespace RTCV.UI
     using RTCV.Common;
     using RTCV.CorruptCore;
     using RTCV.NetCore;
-    using static RTCV.UI.UI_Extensions;
+    using RTCV.UI.Modular;
 
     public partial class RTC_GeneralParameters_Form : ComponentForm, IAutoColorize, IBlockable
     {
@@ -99,10 +99,7 @@ namespace RTCV.UI
 
             if (paramValue != null && paramValue is int maxintensity)
             {
-                var prevState = multiTB_Intensity.FirstLoadDone;
-                multiTB_Intensity.FirstLoadDone = false;
-                multiTB_Intensity.Maximum = maxintensity;
-                multiTB_Intensity.FirstLoadDone = prevState;
+                multiTB_Intensity.SetMaximum(maxintensity, false);
             }
         }
     }

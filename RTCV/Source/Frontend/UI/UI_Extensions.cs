@@ -1,42 +1,33 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Windows.Forms;
-using Newtonsoft.Json;
-using static RTCV.UI.UI_Extensions;
-
 #pragma warning disable RCS1138 // Add summary element to documentation comment.
-#pragma warning disable CA1200
-#pragma warning disable SA1611
-#pragma warning disable SA1629
-#pragma warning disable SA1642
 #pragma warning disable SA1615
 #pragma warning disable SA1514
 #pragma warning disable SA1626
 #pragma warning disable SA1623
 
-
 namespace RTCV.UI
 {
+    using System;
+    using System.Collections.Generic;
+    using System.ComponentModel;
+    using System.Diagnostics;
+    using System.Drawing;
+    using System.Globalization;
+    using System.Linq;
+    using System.Runtime.InteropServices;
+    using System.Text;
+    using System.Windows.Forms;
+
     public static class UI_Extensions
     {
         private static NLog.Logger logger = NLog.LogManager.GetCurrentClassLogger();
 
         public static DialogResult GetInputBox(string title, string promptText, ref string value)
         {
-            Form form = new Form();
-            Label label = new Label();
-            TextBox textBox = new TextBox();
-            Button buttonOk = new Button();
-            Button buttonCancel = new Button();
+            var form = new Form();
+            var label = new Label();
+            var textBox = new TextBox();
+            var buttonOk = new Button();
+            var buttonCancel = new Button();
 
             form.Text = title;
             label.Text = promptText;
@@ -81,13 +72,13 @@ namespace RTCV.UI
 
         public static void Tint(this Bitmap bmp, Color col)
         {
-            Rectangle rectSize = new Rectangle(0, 0, bmp.Width, bmp.Height);
+            var rectSize = new Rectangle(0, 0, bmp.Width, bmp.Height);
 
-            using (Graphics g = Graphics.FromImage(bmp))
+            using (var g = Graphics.FromImage(bmp))
             {
                 g.DrawImage(bmp, rectSize);
 
-                SolidBrush darkBrush = new SolidBrush(col);
+                var darkBrush = new SolidBrush(col);
                 g.FillRectangle(darkBrush, rectSize);
             }
         }
@@ -106,7 +97,7 @@ namespace RTCV.UI
                 using (var bmpGraphics = Graphics.FromImage(bmp))
                 {
                     var bmpDC = bmpGraphics.GetHdc();
-                    using (Graphics formGraphics = Graphics.FromHwnd(con.Handle))
+                    using (var formGraphics = Graphics.FromHwnd(con.Handle))
                     {
                         var formDC = formGraphics.GetHdc();
                         BitBlt(bmpDC, 0, 0, con.ClientRectangle.Width, con.ClientRectangle.Height, formDC, 0, 0, SRCCOPY);
@@ -128,7 +119,7 @@ namespace RTCV.UI
 
         public static List<Control> getControlsWithTag(this Control.ControlCollection controls)
         {
-            List<Control> allControls = new List<Control>();
+            var allControls = new List<Control>();
 
             foreach (Control c in controls)
             {
@@ -148,186 +139,7 @@ namespace RTCV.UI
 
         #endregion CONTROL EXTENSIONS
 
-        public interface ISF<T>
-        {
-            //Interface for Singleton Form
-            T Me();
-            T NewMe();
-        }
-
         public class RTC_Standalone_Form : Form { }
-
-        public class ComponentForm : Form
-        {
-            private protected static NLog.Logger logger;
-            private Panel defaultPanel = null;
-            private Panel previousPanel = null;
-
-            public Panel blockPanel { get; set; } = null;
-
-            public bool undockedSizable = true;
-            public bool popoutAllowed = true;
-            public UI_ComponentFormTile ParentComponentFormTitle = null;
-
-            protected ComponentForm() : base()
-            {
-                logger = NLog.LogManager.GetLogger(this.GetType().ToString());
-            }
-
-            public void AnchorToPanel(Panel pn)
-            {
-                if (defaultPanel == null)
-                {
-                    defaultPanel = pn;
-                }
-
-                previousPanel = pn;
-
-                this.Hide();
-                this.Parent?.Controls.Remove(this);
-
-                this.FormBorderStyle = FormBorderStyle.None;
-
-                //Remove ComponentForm from target panel if required
-                ComponentForm componentFormInTargetPanel = (pn?.Controls.Cast<Control>().FirstOrDefault(it => it is ComponentForm) as ComponentForm);
-                if (componentFormInTargetPanel != null && componentFormInTargetPanel != this)
-                {
-                    pn.Controls.Remove(componentFormInTargetPanel);
-                }
-
-                this.TopLevel = false;
-                this.TopMost = false;
-                pn.Controls.Add(this);
-                Control p = this;
-                while (p.Parent != null)
-                {
-                    p = p.Parent;
-                }
-                if (p is Form _p)
-                {
-                    _p.WindowState = FormWindowState.Normal;
-                }
-
-                this.Size = this.Parent.Size;
-                this.Location = new Point(0, 0);
-
-                this.Show();
-                this.BringToFront();
-            }
-
-            public void SwitchToWindow()
-            {
-                this.Hide();
-                this.Parent?.Controls.Remove(this);
-
-                this.TopLevel = true;
-                this.TopMost = true;
-
-                if (undockedSizable)
-                {
-                    this.FormBorderStyle = FormBorderStyle.Sizable;
-                    this.MaximizeBox = true;
-                }
-                else
-                {
-                    this.FormBorderStyle = FormBorderStyle.FixedSingle;
-                    this.MaximizeBox = false;
-                }
-
-                this.Show();
-            }
-
-            public void RestoreToPreviousPanel()
-            {
-                //We don't care about redocking on quit and depending on what's open, exceptions may occur otherwise
-                if (UICore.isClosing)
-                {
-                    return;
-                }
-
-                if (defaultPanel == null)
-                {
-                    throw new Exception("Default panel unset");
-                }
-
-                Panel targetPanel;
-
-                //We select which panel we want to restore the ComponentForm to
-                if (previousPanel?.Parent?.Visible ?? false)
-                {
-                    targetPanel = previousPanel;
-                }
-                else                            //If the ComponentForm was moved to another panel than the default one
-                {
-                    targetPanel = defaultPanel; //and that panel was hidden, then we move it back to the original panel.
-                }
-
-                //Restore the state since we don't want it maximized or minimized
-                this.WindowState = FormWindowState.Normal;
-
-                //This searches for a ComponentForm in the target Panel
-                ComponentForm componentFormInTargetPanel = (targetPanel?.Controls.Cast<Control>().FirstOrDefault(it => it is ComponentForm) as ComponentForm);
-                if (componentFormInTargetPanel != null && componentFormInTargetPanel != this)
-                {
-                    this.Hide();                //If the target panel hosts another ComponentForm, we won't override it
-                }
-                else                            //This is most likely going to happen if a VMD ComponentForm was changed to a window,
-                {
-                    AnchorToPanel(targetPanel); //then another VMD tool was selected and that window was closed
-                }
-            }
-
-            /* Note: Visual studio is so dumb, the designer won't allow to bind an event to a method in the base class
-               Just paste the following code at the beginning of the ComponentForm class to fix this stupid shit
-
-            public new void HandleMouseDown(object s, MouseEventArgs e) => base.HandleMouseDown(s, e);
-            public new void HandleFormClosing(object s, FormClosingEventArgs e) => base.HandleFormClosing(s, e);
-
-            ALSO, GroupBox does have an event handler for MouseDown but michaelsoft are too high on crack to let
-            us bind something to it in the properties panel. Gotta add it manually in the designer.cs ffs.
-            */
-
-            public void HandleMouseDown(object sender, MouseEventArgs e)
-            {
-                if (sender is NumericUpDown || sender is TextBox)
-                {
-                    return;
-                }
-
-                while (!(sender is ComponentForm))
-                {
-                    Control c = (Control)sender;
-                    sender = c.Parent;
-                    e = new MouseEventArgs(e.Button, e.Clicks, e.X + c.Location.X, e.Y + c.Location.Y, e.Delta);
-                }
-
-                if (popoutAllowed && e.Button == MouseButtons.Right && (sender as ComponentForm).FormBorderStyle == FormBorderStyle.None)
-                {
-                    Point locate = new Point(((Control)sender).Location.X + e.Location.X, ((Control)sender).Location.Y + e.Location.Y);
-                    ContextMenuStrip columnsMenu = new ContextMenuStrip();
-                    columnsMenu.Items.Add("Detach to window", null, new EventHandler((ob, ev) =>
-                    {
-                        (sender as ComponentForm).SwitchToWindow();
-                    }));
-                    columnsMenu.Show(this, locate);
-                }
-            }
-
-            public void HandleFormClosing(object sender, FormClosingEventArgs e)
-            {
-                if (e.CloseReason != CloseReason.FormOwnerClosing)
-                {
-                    e.Cancel = true;
-                    this.RestoreToPreviousPanel();
-                    return;
-                }
-            }
-
-            public sealed override string ToString()
-            {
-                return Text;
-            }
-        }
 
         // http://msdn.microsoft.com/en-us/library/ms229644%28v=vs.80%29.aspx
         public class NumericTextBox : TextBox
@@ -339,11 +151,11 @@ namespace RTCV.UI
                 base.OnKeyPress(e);
 
                 var numberFormatInfo = CultureInfo.CurrentCulture.NumberFormat;
-                string decimalSeparator = numberFormatInfo.NumberDecimalSeparator;
-                string groupSeparator = numberFormatInfo.NumberGroupSeparator;
-                string negativeSign = numberFormatInfo.NegativeSign;
+                var decimalSeparator = numberFormatInfo.NumberDecimalSeparator;
+                var groupSeparator = numberFormatInfo.NumberGroupSeparator;
+                var negativeSign = numberFormatInfo.NegativeSign;
 
-                string keyInput = e.KeyChar.ToString();
+                var keyInput = e.KeyChar.ToString();
 
                 if (char.IsDigit(e.KeyChar))
                 {
@@ -392,69 +204,6 @@ namespace RTCV.UI
         }
     }
 
-    //From Bizhawk
-    public static class NumberExtensions
-    {
-        public static Point GetMouseLocation(this MouseEventArgs e, object sender)
-        {
-            if (!(sender is Control ctr))
-            {
-                return new Point(e.Location.X, e.Location.Y);
-            }
-
-            var x = e.Location.X;
-            var y = e.Location.Y;
-
-            do
-            {
-                if (ctr.Parent != null
-                    && !(ctr is UI_ComponentFormTile)
-                    && !(ctr is UI_CanvasForm)
-                    && !(ctr is ComponentPanel)
-                    && !(ctr is ComponentForm)
-                    )
-                {
-                    x += ctr.Location.X;
-                    y += ctr.Location.Y;
-                }
-
-                ctr = ctr.Parent;
-            }
-            while (ctr != null);
-
-            return new Point(x, y);
-        }
-
-        public static string ToHexString(this long n)
-        {
-            return $"{n:X}";
-        }
-
-        /// <summary>
-        /// Force the value to be strictly between min and max (both exclued)
-        /// </summary>
-        /// <typeparam name="T">Anything that implements <see cref="IComparable{T}"/></typeparam>
-        /// <param name="val">Value that will be clamped</param>
-        /// <param name="min">Minimum allowed</param>
-        /// <param name="max">Maximum allowed</param>
-        /// <returns>The value if strictly between min and max; otherwise min (or max depending of what is passed)</returns>
-        public static T Clamp<T>(this T val, T min, T max)
-            where T : IComparable<T>
-        {
-            if (val.CompareTo(min) < 0)
-            {
-                return min;
-            }
-
-            if (val.CompareTo(max) > 0)
-            {
-                return max;
-            }
-
-            return val;
-        }
-    }
-
     /// <summary>
     /// Reference Article https://msdn.microsoft.com/en-us/library/aa730881(v=vs.80).aspx
     /// Custom column type dedicated to the DataGridViewNumericUpDownCell cell type.
@@ -480,61 +229,12 @@ namespace RTCV.UI
             get => base.CellTemplate;
             set
             {
-                DataGridViewNumericUpDownCell dataGridViewNumericUpDownCell = value as DataGridViewNumericUpDownCell;
+                var dataGridViewNumericUpDownCell = value as DataGridViewNumericUpDownCell;
                 if (value != null && dataGridViewNumericUpDownCell == null)
                 {
                     throw new InvalidCastException("Value provided for CellTemplate must be of type DataGridViewNumericUpDownElements.DataGridViewNumericUpDownCell or derive from it.");
                 }
                 base.CellTemplate = value;
-            }
-        }
-
-        /// <summary>
-        /// Replicates the DecimalPlaces property of the DataGridViewNumericUpDownCell cell type.
-        /// </summary>
-        [
-            Category("Appearance"),
-            DefaultValue(DataGridViewNumericUpDownCell.DATAGRIDVIEWNUMERICUPDOWNCELL_defaultDecimalPlaces),
-            Description("Indicates the number of decimal places to display.")
-        ]
-        public int DecimalPlaces
-        {
-            get
-            {
-                if (this.NumericUpDownCellTemplate == null)
-                {
-                    throw new InvalidOperationException("Operation cannot be completed because this DataGridViewColumn does not have a CellTemplate.");
-                }
-                return this.NumericUpDownCellTemplate.DecimalPlaces;
-            }
-            set
-            {
-                if (this.NumericUpDownCellTemplate == null)
-                {
-                    throw new InvalidOperationException("Operation cannot be completed because this DataGridViewColumn does not have a CellTemplate.");
-                }
-                // Update the template cell so that subsequent cloned cells use the new value.
-                this.NumericUpDownCellTemplate.DecimalPlaces = value;
-                if (this.DataGridView != null)
-                {
-                    // Update all the existing DataGridViewNumericUpDownCell cells in the column accordingly.
-                    DataGridViewRowCollection dataGridViewRows = this.DataGridView.Rows;
-                    int rowCount = dataGridViewRows.Count;
-                    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
-                    {
-                        // Be careful not to unshare rows unnecessarily.
-                        // This could have severe performance repercussions.
-                        DataGridViewRow dataGridViewRow = dataGridViewRows.SharedRow(rowIndex);
-                        if (dataGridViewRow.Cells[this.Index] is DataGridViewNumericUpDownCell dataGridViewCell)
-                        {
-                            // Call the internal SetDecimalPlaces method instead of the property to avoid invalidation
-                            // of each cell. The whole column is invalidated later in a single operation for better performance.
-                            dataGridViewCell.SetDecimalPlaces(rowIndex, value);
-                        }
-                    }
-                    this.DataGridView.InvalidateColumn(this.Index);
-                    // TODO: Call the grid's autosizing methods to autosize the column, rows, column headers / row headers as needed.
-                }
             }
         }
 
@@ -565,8 +265,8 @@ namespace RTCV.UI
                 if (this.DataGridView != null)
                 {
                     DataGridViewRowCollection dataGridViewRows = this.DataGridView.Rows;
-                    int rowCount = dataGridViewRows.Count;
-                    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+                    var rowCount = dataGridViewRows.Count;
+                    for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
                     {
                         DataGridViewRow dataGridViewRow = dataGridViewRows.SharedRow(rowIndex);
                         if (dataGridViewRow.Cells[this.Index] is DataGridViewNumericUpDownCell dataGridViewCell)
@@ -576,12 +276,6 @@ namespace RTCV.UI
                     }
                 }
             }
-        }
-
-        /// Indicates whether the Increment property should be persisted.
-        private bool ShouldSerializeIncrement()
-        {
-            return !this.Increment.Equals(DataGridViewNumericUpDownCell.DATAGRIDVIEWNUMERICUPDOWNCELL_defaultIncrement);
         }
 
         /// <summary>
@@ -612,8 +306,8 @@ namespace RTCV.UI
                 if (this.DataGridView != null)
                 {
                     DataGridViewRowCollection dataGridViewRows = this.DataGridView.Rows;
-                    int rowCount = dataGridViewRows.Count;
-                    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+                    var rowCount = dataGridViewRows.Count;
+                    for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
                     {
                         DataGridViewRow dataGridViewRow = dataGridViewRows.SharedRow(rowIndex);
                         if (dataGridViewRow.Cells[this.Index] is DataGridViewNumericUpDownCell dataGridViewCell)
@@ -627,12 +321,6 @@ namespace RTCV.UI
                     //       column headers / row headers as needed.
                 }
             }
-        }
-
-        /// Indicates whether the Maximum property should be persisted.
-        private bool ShouldSerializeMaximum()
-        {
-            return !this.Maximum.Equals(DataGridViewNumericUpDownCell.DATAGRIDVIEWNUMERICUPDOWNCELL_defaultMaximum);
         }
 
         /// <summary>
@@ -663,8 +351,8 @@ namespace RTCV.UI
                 if (this.DataGridView != null)
                 {
                     DataGridViewRowCollection dataGridViewRows = this.DataGridView.Rows;
-                    int rowCount = dataGridViewRows.Count;
-                    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+                    var rowCount = dataGridViewRows.Count;
+                    for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
                     {
                         DataGridViewRow dataGridViewRow = dataGridViewRows.SharedRow(rowIndex);
                         if (dataGridViewRow.Cells[this.Index] is DataGridViewNumericUpDownCell dataGridViewCell)
@@ -678,12 +366,6 @@ namespace RTCV.UI
                     //       column headers / row headers as needed.
                 }
             }
-        }
-
-        /// Indicates whether the Maximum property should be persisted.
-        private bool ShouldSerializeMinimum()
-        {
-            return !this.Minimum.Equals(DataGridViewNumericUpDownCell.DATAGRIDVIEWNUMERICUPDOWNCELL_defaultMinimum);
         }
 
         /// <summary>
@@ -714,8 +396,8 @@ namespace RTCV.UI
                 if (this.DataGridView != null)
                 {
                     DataGridViewRowCollection dataGridViewRows = this.DataGridView.Rows;
-                    int rowCount = dataGridViewRows.Count;
-                    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+                    var rowCount = dataGridViewRows.Count;
+                    for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
                     {
                         DataGridViewRow dataGridViewRow = dataGridViewRows.SharedRow(rowIndex);
                         if (dataGridViewRow.Cells[this.Index] is DataGridViewNumericUpDownCell dataGridViewCell)
@@ -760,8 +442,8 @@ namespace RTCV.UI
                 if (this.DataGridView != null)
                 {
                     DataGridViewRowCollection dataGridViewRows = this.DataGridView.Rows;
-                    int rowCount = dataGridViewRows.Count;
-                    for (int rowIndex = 0; rowIndex < rowCount; rowIndex++)
+                    var rowCount = dataGridViewRows.Count;
+                    for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
                     {
                         DataGridViewRow dataGridViewRow = dataGridViewRows.SharedRow(rowIndex);
                         if (dataGridViewRow.Cells[this.Index] is DataGridViewNumericUpDownCell dataGridViewCell)
@@ -778,12 +460,6 @@ namespace RTCV.UI
             }
         }
 
-        /// Indicates whether the Maximum property should be persisted.
-        private bool ShouldSerializeHexadecimal()
-        {
-            return !this.Hexadecimal.Equals(DataGridViewNumericUpDownCell.DATAGRIDVIEWNUMERICUPDOWNCELL_defaultHexadecimal);
-        }
-
         /// <summary>
         /// Small utility function that returns the template cell as a DataGridViewNumericUpDownCell
         /// </summary>
@@ -794,7 +470,7 @@ namespace RTCV.UI
         /// </summary>
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder(100);
+            var sb = new StringBuilder(100);
             sb.Append("DataGridViewNumericUpDownColumn { Name=");
             sb.Append(this.Name);
             sb.Append(", Index=");
@@ -1044,7 +720,7 @@ namespace RTCV.UI
         /// </summary>
         public override object Clone()
         {
-            DataGridViewNumericUpDownCell dataGridViewCell = base.Clone() as DataGridViewNumericUpDownCell;
+            var dataGridViewCell = base.Clone() as DataGridViewNumericUpDownCell;
             if (dataGridViewCell != null)
             {
                 dataGridViewCell.DecimalPlaces = this.DecimalPlaces;
@@ -1114,7 +790,7 @@ namespace RTCV.UI
             editingControlBounds.Width = Math.Max(0, editingControlBounds.Width - 2);
 
             // Adjust the vertical location of the editing control:
-            int preferredHeight = cellStyle.Font.Height + 3;
+            var preferredHeight = cellStyle.Font.Height + 3;
             if (preferredHeight < editingControlBounds.Height)
             {
                 switch (cellStyle.Alignment)
@@ -1168,18 +844,18 @@ namespace RTCV.UI
         {
             if (this.Hexadecimal)
             {
-                ulong valueulong = System.Convert.ToUInt64(value);
+                var valueulong = System.Convert.ToUInt64(value);
                 return valueulong.ToString("X");
             }
             else
             {
                 // By default, the base implementation converts the Decimal 1234.5 into the string "1234.5"
-                object formattedValue = base.GetFormattedValue(value, rowIndex, ref cellStyle, valueTypeConverter, formattedValueTypeConverter, context);
-                string formattedNumber = formattedValue as string;
+                var formattedValue = base.GetFormattedValue(value, rowIndex, ref cellStyle, valueTypeConverter, formattedValueTypeConverter, context);
+                var formattedNumber = formattedValue as string;
                 if (!string.IsNullOrEmpty(formattedNumber) && value != null)
                 {
-                    decimal unformattedDecimal = System.Convert.ToDecimal(value);
-                    decimal formattedDecimal = System.Convert.ToDecimal(formattedNumber);
+                    var unformattedDecimal = System.Convert.ToDecimal(value);
+                    var formattedDecimal = System.Convert.ToDecimal(formattedNumber);
                     if (unformattedDecimal == formattedDecimal)
                     {
                         // The base implementation of GetFormattedValue (which triggers the CellFormatting event) did nothing else than
@@ -1250,7 +926,7 @@ namespace RTCV.UI
         {
             NumberFormatInfo numberFormatInfo = System.Globalization.CultureInfo.CurrentCulture.NumberFormat;
             Keys negativeSignKey = Keys.None;
-            string negativeSignStr = numberFormatInfo.NegativeSign;
+            var negativeSignStr = numberFormatInfo.NegativeSign;
             if (!string.IsNullOrEmpty(negativeSignStr) && negativeSignStr.Length == 1)
             {
                 negativeSignKey = (Keys)(VkKeyScan(negativeSignStr[0]));
@@ -1333,8 +1009,8 @@ namespace RTCV.UI
                        paintParts & ~(DataGridViewPaintParts.ErrorIcon | DataGridViewPaintParts.ContentForeground));
 
             Point ptCurrentCell = this.DataGridView.CurrentCellAddress;
-            bool cellCurrent = ptCurrentCell.X == this.ColumnIndex && ptCurrentCell.Y == rowIndex;
-            bool cellEdited = cellCurrent && this.DataGridView.EditingControl != null;
+            var cellCurrent = ptCurrentCell.X == this.ColumnIndex && ptCurrentCell.Y == rowIndex;
+            var cellEdited = cellCurrent && this.DataGridView.EditingControl != null;
 
             // If the cell is in editing mode, there is nothing else to paint
             if (!cellEdited)
@@ -1365,31 +1041,6 @@ namespace RTCV.UI
                     // Determine the NumericUpDown control location
                     valBounds = GetAdjustedEditingControlBounds(valBounds, cellStyle);
 
-                    bool cellSelected = (cellState & DataGridViewElementStates.Selected) != 0;
-
-                    /*if (renderingBitmap.Width < valBounds.Width ||
-                        renderingBitmap.Height < valBounds.Height)
-                    {
-                        // The static bitmap is too small, a bigger one needs to be allocated.
-                        renderingBitmap.Dispose();
-                        renderingBitmap = new Bitmap(valBounds.Width, valBounds.Height);
-                    }*/
-
-                    //7/1/2018
-                    //OPTIMIZE PAINTING BY REMOVING UNUSED FUNCTIONALITY
-                    //IF ANY OF THESE FUNCTIONS ARE USED, THEY NEED TO BE RE-ENABLED
-
-                    // Make sure the NumericUpDown control is parented to a visible control
-                    /*
-                    if (paintingNumericUpDown.Parent == null || !paintingNumericUpDown.Parent.Visible)
-                    {
-                        paintingNumericUpDown.Parent = this.DataGridView;
-                    }
-                    paintingNumericUpDown.RightToLeft = this.DataGridView.RightToLeft;
-                    paintingNumericUpDown.ThousandsSeparator = this.ThousandsSeparator;
-                    paintingNumericUpDown.TextAlign = DataGridViewNumericUpDownCell.TranslateAlignment(cellStyle.Alignment);
-                    paintingNumericUpDown.DecimalPlaces = this.DecimalPlaces;*/
-
                     // Set all the relevant properties
                     paintingNumericUpDown.Value = Convert.ToDecimal(value);
                     paintingNumericUpDown.Hexadecimal = this.Hexadecimal;
@@ -1399,6 +1050,7 @@ namespace RTCV.UI
                     paintingNumericUpDown.Location = new Point(0, -paintingNumericUpDown.Height - 100);
 
                     Color foreColor;
+                    var cellSelected = (cellState & DataGridViewElementStates.Selected) != 0;
                     if (PartPainted(paintParts, DataGridViewPaintParts.SelectionBackground) && cellSelected)
                     {
                         foreColor = cellStyle.SelectionForeColor;
@@ -1534,11 +1186,11 @@ namespace RTCV.UI
             {
                 this.minimum = this.maximum;
             }
-            object cellValue = GetValue(rowIndex);
+            var cellValue = GetValue(rowIndex);
             if (cellValue != null)
             {
-                decimal currentValue = System.Convert.ToDecimal(cellValue);
-                decimal constrainedValue = Constrain(currentValue);
+                var currentValue = System.Convert.ToDecimal(cellValue);
+                var constrainedValue = Constrain(currentValue);
                 if (constrainedValue != currentValue)
                 {
                     SetValue(rowIndex, constrainedValue);
@@ -1563,13 +1215,13 @@ namespace RTCV.UI
             {
                 this.maximum = value;
             }
-            object cellValue = GetValue(rowIndex);
+            var cellValue = GetValue(rowIndex);
             if (cellValue != null)
             {
                 if (Hexadecimal)
                 {
-                    decimal currentValue = System.Convert.ToDecimal(cellValue);
-                    decimal constrainedValue = Constrain(currentValue);
+                    var currentValue = System.Convert.ToDecimal(cellValue);
+                    var constrainedValue = Constrain(currentValue);
                     if (constrainedValue != currentValue)
                     {
                         SetValue(rowIndex, constrainedValue);
@@ -1577,8 +1229,8 @@ namespace RTCV.UI
                 }
                 else
                 {
-                    decimal currentValue = System.Convert.ToDecimal(cellValue);
-                    decimal constrainedValue = Constrain(currentValue);
+                    var currentValue = System.Convert.ToDecimal(cellValue);
+                    var constrainedValue = Constrain(currentValue);
                     if (constrainedValue != currentValue)
                     {
                         SetValue(rowIndex, constrainedValue);
@@ -1732,7 +1384,7 @@ namespace RTCV.UI
             if (dataGridViewCellStyle.BackColor.A < 255)
             {
                 // The NumericUpDown control does not support transparent back colors
-                Color opaqueBackColor = Color.FromArgb(255, dataGridViewCellStyle.BackColor);
+                var opaqueBackColor = Color.FromArgb(255, dataGridViewCellStyle.BackColor);
                 this.BackColor = opaqueBackColor;
                 this.dataGridView.EditingPanel.BackColor = opaqueBackColor;
             }
@@ -1901,50 +1553,6 @@ namespace RTCV.UI
             NotifyDataGridViewOfValueChange();
         }
 
-        /*
-        /// <summary>
-        /// Listen to the KeyPress notification to know when the value changed, and
-        /// notify the grid of the change.
-        /// </summary>
-        protected override void OnKeyPress(KeyPressEventArgs e)
-        {
-            base.OnKeyPress(e);
-
-            // The value changes when a digit, the decimal separator, the group separator or
-            // the negative sign is pressed.
-            bool notifyValueChange = false;
-            if (char.IsDigit(e.KeyChar) || (e.KeyChar >= 'a' && e.KeyChar <= 'f') || (e.KeyChar >= 'A' && e.KeyChar <= 'F') || (e.KeyChar == '\b' || (e.KeyChar == (char)Keys.ControlKey && e.KeyChar == (char)Keys.V)))
-            {
-                notifyValueChange = true;
-            }
-            else
-            {
-                System.Globalization.NumberFormatInfo numberFormatInfo = System.Globalization.CultureInfo.CurrentCulture.NumberFormat;
-                string decimalSeparatorStr = numberFormatInfo.NumberDecimalSeparator;
-                string groupSeparatorStr = numberFormatInfo.NumberGroupSeparator;
-                string negativeSignStr = numberFormatInfo.NegativeSign;
-                if (!string.IsNullOrEmpty(decimalSeparatorStr) && decimalSeparatorStr.Length == 1)
-                {
-                    notifyValueChange = decimalSeparatorStr[0] == e.KeyChar;
-                }
-                if (!notifyValueChange && !string.IsNullOrEmpty(groupSeparatorStr) && groupSeparatorStr.Length == 1)
-                {
-                    notifyValueChange = groupSeparatorStr[0] == e.KeyChar;
-                }
-                if (!notifyValueChange && !string.IsNullOrEmpty(negativeSignStr) && negativeSignStr.Length == 1)
-                {
-                    notifyValueChange = negativeSignStr[0] == e.KeyChar;
-                }
-            }
-
-            if (notifyValueChange)
-            {
-                // Let the DataGridView know about the value change
-                NotifyDataGridViewOfValueChange();
-            }
-        }
-        */
-
         /// <summary>
         /// Listen to the ValueChanged notification to forward the change to the grid.
         /// </summary>
@@ -2002,7 +1610,7 @@ namespace RTCV.UI
 
         protected override void OnMouseWheel(MouseEventArgs e)
         {
-            HandledMouseEventArgs hme = e as HandledMouseEventArgs;
+            var hme = e as HandledMouseEventArgs;
             if (hme != null)
             {
                 hme.Handled = true;
@@ -2039,23 +1647,6 @@ namespace RTCV.UI
                 Text = GetNumberText(Value);
                 ChangingText = false;
             }
-
-            //    if(base.Hexadecimal)
-            //    base.Text = GetNumberText(base.Value);
-        }
-
-        protected override void ValidateEditText()
-        {
-            if (base.Hexadecimal)
-            {
-                HexParseEditText();
-            }
-            else
-            {
-                ParseEditText();
-            }
-
-            UpdateEditText();
         }
 
         private string GetNumberText(decimal num)
@@ -2138,7 +1729,7 @@ namespace RTCV.UI
                 // Select a range of new rows, if shift key is down
                 if ((Control.ModifierKeys & Keys.Shift) != 0)
                 {
-                    for (int i = currentRow; i != e.RowIndex; i += Math.Sign(e.RowIndex - currentRow))
+                    for (var i = currentRow; i != e.RowIndex; i += Math.Sign(e.RowIndex - currentRow))
                     {
                         this.Rows[i].Selected = true;
                     }
@@ -2248,15 +1839,7 @@ namespace RTCV.UI
                         }
                         else
                         {
-                            int temp = this.Rows.Count;
-                            if (temp >= 0)
-                            {
-                                rowIndexOfItemUnderMouseToDrop = temp;
-                            }
-                            else
-                            {
-                                rowIndexOfItemUnderMouseToDrop = 0;
-                            }
+                            rowIndexOfItemUnderMouseToDrop = Math.Max(this.Rows.Count, 0);
                         }
                     }
 
@@ -2265,7 +1848,7 @@ namespace RTCV.UI
 
                     //Re-select the new rows
                     this.ClearSelection();
-                    for (int i = rowIndexOfItemUnderMouseToDrop; i < (rowIndexOfItemUnderMouseToDrop + _rows.Length); i++)
+                    for (var i = rowIndexOfItemUnderMouseToDrop; i < (rowIndexOfItemUnderMouseToDrop + _rows.Length); i++)
                     {
                         this.Rows[i].Selected = true;
                     }
@@ -2276,7 +1859,7 @@ namespace RTCV.UI
         private new void DragOver(object sender, DragEventArgs e)
         {
             e.Effect = DragDropEffects.Move;
-            int headeroffset = this.Top + this.ColumnHeadersHeight;
+            var headeroffset = this.Top + this.ColumnHeadersHeight;
 
             Point clientPoint = this.PointToClient(new Point(e.X, e.Y));
 
@@ -2288,273 +1871,6 @@ namespace RTCV.UI
             {
                 this.FirstDisplayedScrollingRowIndex += 1;
             }
-            //Cursor.Position = this.PointToScreen(new Point(Cursor.Position.X, this.Top + this.ColumnHeadersHeight));
         }
     }
-}
-
-public static class JsonHelper
-{
-    public static void Serialize(object value, Stream s, Formatting f = Formatting.Indented)
-    {
-        using (StreamWriter writer = new StreamWriter(s))
-        using (JsonTextWriter jsonWriter = new JsonTextWriter(writer))
-        {
-            JsonSerializer ser = new JsonSerializer
-            {
-                Formatting = f
-            };
-            ser.Serialize(jsonWriter, value);
-            jsonWriter.Flush();
-        }
-    }
-
-    public static T Deserialize<T>(Stream s)
-    {
-        using (StreamReader reader = new StreamReader(s))
-        using (JsonTextReader jsonReader = new JsonTextReader(reader))
-        {
-            JsonSerializer ser = new JsonSerializer();
-            return ser.Deserialize<T>(jsonReader);
-        }
-    }
-}
-
-// https://stackoverflow.com/a/11640700/10923568
-internal static class RandomExtensions
-{
-    //returns a uniformly random ulong between ulong.Min inclusive and ulong.Max inclusive
-    public static ulong NextULong(this Random rng)
-    {
-        byte[] buf = new byte[8];
-        rng.NextBytes(buf);
-        return BitConverter.ToUInt64(buf, 0);
-    }
-
-    //returns a uniformly random ulong between ulong.Min and Max without modulo bias
-    public static ulong NextULong(this Random rng, ulong max, bool inclusiveUpperBound = false)
-    {
-        return rng.NextULong(ulong.MinValue, max, inclusiveUpperBound);
-    }
-
-    //returns a uniformly random ulong between Min and Max without modulo bias
-    public static ulong NextULong(this Random rng, ulong min, ulong max, bool inclusiveUpperBound = false)
-    {
-        ulong range = max - min;
-
-        if (inclusiveUpperBound)
-        {
-            if (range == ulong.MaxValue)
-            {
-                return rng.NextULong();
-            }
-
-            range++;
-        }
-
-        if (range <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(max), "Max must be greater than min when inclusiveUpperBound is false, and greater than or equal to when true");
-        }
-
-        ulong limit = ulong.MaxValue - ulong.MaxValue % range;
-        ulong r;
-        do
-        {
-            r = rng.NextULong();
-        } while (r > limit);
-
-        return r % range + min;
-    }
-
-    //returns a uniformly random long between long.Min inclusive and long.Max inclusive
-    public static long NextLong(this Random rng)
-    {
-        byte[] buf = new byte[8];
-        rng.NextBytes(buf);
-        return BitConverter.ToInt64(buf, 0);
-    }
-
-    //returns a uniformly random long between long.Min and Max without modulo bias
-    public static long NextLong(this Random rng, long max, bool inclusiveUpperBound = false)
-    {
-        return rng.NextLong(long.MinValue, max, inclusiveUpperBound);
-    }
-
-    //returns a uniformly random long between Min and Max without modulo bias
-    public static long NextLong(this Random rng, long min, long max, bool inclusiveUpperBound = false)
-    {
-        ulong range = (ulong)(max - min);
-
-        if (inclusiveUpperBound)
-        {
-            if (range == ulong.MaxValue)
-            {
-                return rng.NextLong();
-            }
-            range++;
-        }
-
-        if (range <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(max), "Max must be greater than min when inclusiveUpperBound is false, and greater than or equal to when true");
-        }
-
-        ulong limit = ulong.MaxValue - ulong.MaxValue % range;
-        ulong r;
-        do
-        {
-            r = rng.NextULong();
-        } while (r > limit);
-        return (long)(r % range + (ulong)min);
-    }
-}
-
-/// <summary>
-/// Provides a generic collection that supports data binding and additionally supports sorting.
-/// See http://msdn.microsoft.com/en-us/library/ms993236.aspx
-/// If the elements are IComparable it uses that; otherwise compares the ToString()
-/// </summary>
-/// <typeparam name="T">The type of elements in the list.</typeparam>
-public class SortableBindingList<T> : BindingList<T>
-    where T : class
-{
-    private bool _isSorted;
-    private ListSortDirection _sortDirection = ListSortDirection.Ascending;
-    private PropertyDescriptor _sortProperty;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SortableBindingList{T}"/> class.
-    /// </summary>
-    public SortableBindingList()
-    {
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="SortableBindingList{T}"/> class.
-    /// </summary>
-    /// <param name="list">An <see cref="T:System.Collections.Generic.IList`1" /> of items to be contained in the <see cref="T:System.ComponentModel.BindingList`1" />.</param>
-    public SortableBindingList(IList<T> list)
-        : base(list)
-    {
-    }
-
-    /// <summary>
-    /// Gets a value indicating whether the list supports sorting.
-    /// </summary>
-    protected override bool SupportsSortingCore => true;
-
-    /// <summary>
-    /// Gets a value indicating whether the list is sorted.
-    /// </summary>
-    protected override bool IsSortedCore => _isSorted;
-
-    /// <summary>
-    /// Gets the direction the list is sorted.
-    /// </summary>
-    protected override ListSortDirection SortDirectionCore => _sortDirection;
-
-    /// <summary>
-    /// Gets the property descriptor that is used for sorting the list if sorting is implemented in a derived class; otherwise, returns null
-    /// </summary>
-    protected override PropertyDescriptor SortPropertyCore => _sortProperty;
-
-    /// <summary>
-    /// Removes any sort applied with ApplySortCore if sorting is implemented
-    /// </summary>
-    protected override void RemoveSortCore()
-    {
-        _sortDirection = ListSortDirection.Ascending;
-        _sortProperty = null;
-        _isSorted = false; //thanks Luca
-    }
-
-    /// <summary>
-    /// Sorts the items if overridden in a derived class
-    /// </summary>
-    /// <param name="prop"></param>
-    /// <param name="direction"></param>
-    protected override void ApplySortCore(PropertyDescriptor prop, ListSortDirection direction)
-    {
-        _sortProperty = prop;
-        _sortDirection = direction;
-
-        List<T> list = Items as List<T>;
-        if (list == null)
-        {
-            return;
-        }
-
-        list.Sort(Compare);
-
-        _isSorted = true;
-        //fire an event that the list has been changed.
-        OnListChanged(new ListChangedEventArgs(ListChangedType.Reset, -1));
-    }
-
-    private int Compare(T lhs, T rhs)
-    {
-        var result = OnComparison(lhs, rhs);
-        //invert if descending
-        if (_sortDirection == ListSortDirection.Descending)
-        {
-            result = -result;
-        }
-
-        return result;
-    }
-
-    private int OnComparison(T lhs, T rhs)
-    {
-        object lhsValue = lhs == null ? null : _sortProperty.GetValue(lhs);
-        object rhsValue = rhs == null ? null : _sortProperty.GetValue(rhs);
-        if (lhsValue == null)
-        {
-            return (rhsValue == null) ? 0 : -1; //nulls are equal
-        }
-        if (rhsValue == null)
-        {
-            return 1; //first has value, second doesn't
-        }
-        if (lhsValue is IComparable)
-        {
-            return ((IComparable)lhsValue).CompareTo(rhsValue);
-        }
-        if (lhsValue.Equals(rhsValue))
-        {
-            return 0; //both are the same
-        }
-        //not comparable, compare ToString
-        return lhsValue.ToString().CompareTo(rhsValue.ToString());
-    }
-}
-
-//From bizhawk
-/// <summary>
-/// A dictionary that creates new values on the fly as necessary so that any key you need will be defined.
-/// </summary>
-/// <typeparam name="TKey">dictionary keys</typeparam>
-/// <typeparam name="TValue">dictionary values</typeparam>
-[Serializable]
-public class WorkingDictionary<TKey, TValue> : Dictionary<TKey, TValue>
-    where TValue : new()
-{
-    public new TValue this[TKey key]
-    {
-        get
-        {
-            if (!TryGetValue(key, out TValue temp))
-            {
-                temp = this[key] = new TValue();
-            }
-
-            return temp;
-        }
-
-        set => base[key] = value;
-    }
-
-    public WorkingDictionary() { }
-
-    protected WorkingDictionary(SerializationInfo info, StreamingContext context) : base(info, context) { }
 }

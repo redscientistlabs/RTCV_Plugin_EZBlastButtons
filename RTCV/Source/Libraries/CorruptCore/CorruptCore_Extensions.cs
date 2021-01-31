@@ -17,7 +17,7 @@ namespace RTCV.CorruptCore
     using System.Windows.Forms;
     using Ceras;
     using Newtonsoft.Json;
-    using RTCV.NetCore;
+    using RTCV.NetCore.NetCore_Extensions;
 
     public static class CorruptCore_Extensions
     {
@@ -914,29 +914,6 @@ namespace RTCV.CorruptCore
         }
         #endregion
 
-        /// <summary>
-        /// Force the value to be strictly between min and max (both exclued)
-        /// </summary>
-        /// <typeparam name="T">Anything that implements <see cref="IComparable{T}"/></typeparam>
-        /// <param name="val">Value that will be clamped</param>
-        /// <param name="min">Minimum allowed</param>
-        /// <param name="max">Maximum allowed</param>
-        /// <returns>The value if strictly between min and max; otherwise min (or max depending of what is passed)</returns>
-        public static T Clamp<T>(this T val, T min, T max)
-            where T : IComparable<T>
-        {
-            if (val.CompareTo(min) < 0)
-            {
-                return min;
-            }
-
-            if (val.CompareTo(max) > 0)
-            {
-                return max;
-            }
-
-            return val;
-        }
         #region Image CorruptCore_Extensions
 
         public static byte[] ImageToByteArray(System.Drawing.Image imageIn, System.Drawing.Imaging.ImageFormat imageFormat)
@@ -954,172 +931,6 @@ namespace RTCV.CorruptCore
         }
 
         #endregion
-
-        [Serializable]
-        public class NullableByteArrayComparer : IEqualityComparer<byte?[]>
-        {
-            public bool Equals(byte?[] a, byte?[] b)
-            {
-                if (a.Length != b.Length)
-                {
-                    return false;
-                }
-
-                for (int i = 0; i < a.Length; i++)
-                {
-                    if (a[i] == null || b[i] == null) //wildcards
-                        return true;
-
-                    if (a[i].Value != b[i].Value)
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            public int GetHashCode(byte?[] a)
-            {
-                uint b = 0;
-                for (int i = 0; i < a.Length; i++)
-                {
-                    b = ((b << 23) | (b >> 9)) ^ (a[i] ?? 69);
-                }
-
-                return unchecked((int)b);
-            }
-
-            public NullableByteArrayComparer()
-            {
-            }
-        }
-
-        public class ByteArrayComparer : IEqualityComparer<byte[]>
-        {
-            public bool Equals(byte[] a, byte[] b)
-            {
-                if (a.Length != b.Length)
-                {
-                    return false;
-                }
-
-                for (int i = 0; i < a.Length; i++)
-                {
-                    if (a[i] != b[i])
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            public int GetHashCode(byte[] a)
-            {
-                uint b = 0;
-                for (int i = 0; i < a.Length; i++)
-                {
-                    b = ((b << 23) | (b >> 9)) ^ a[i];
-                }
-
-                return unchecked((int)b);
-            }
-
-            public ByteArrayComparer()
-            {
-            }
-        }
-    }
-
-    // https://stackoverflow.com/a/11640700/10923568
-    internal static class RandomExtensions
-    {
-        //returns a uniformly random ulong between ulong.Min inclusive and ulong.Max inclusive
-        public static ulong NextULong(this Random rng)
-        {
-            byte[] buf = new byte[8];
-            rng.NextBytes(buf);
-            return BitConverter.ToUInt64(buf, 0);
-        }
-
-        //returns a uniformly random ulong between ulong.Min and Max without modulo bias
-        public static ulong NextULong(this Random rng, ulong max, bool inclusiveUpperBound = false)
-        {
-            return rng.NextULong(ulong.MinValue, max, inclusiveUpperBound);
-        }
-
-        //returns a uniformly random ulong between Min and Max without modulo bias
-        public static ulong NextULong(this Random rng, ulong min, ulong max, bool inclusiveUpperBound = false)
-        {
-            ulong range = max - min;
-
-            if (inclusiveUpperBound)
-            {
-                if (range == ulong.MaxValue)
-                {
-                    return rng.NextULong();
-                }
-
-                range++;
-            }
-
-            if (range <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(max), "Max must be greater than min when inclusiveUpperBound is false, and greater than or equal to when true");
-            }
-
-            ulong limit = ulong.MaxValue - ulong.MaxValue % range;
-            ulong r;
-            do
-            {
-                r = rng.NextULong();
-            } while (r > limit);
-
-            return r % range + min;
-        }
-
-        //returns a uniformly random long between long.Min inclusive and long.Max inclusive
-        public static long NextLong(this Random rng)
-        {
-            byte[] buf = new byte[8];
-            rng.NextBytes(buf);
-            return BitConverter.ToInt64(buf, 0);
-        }
-
-        //returns a uniformly random long between long.Min and Max without modulo bias
-        public static long NextLong(this Random rng, long max, bool inclusiveUpperBound = false)
-        {
-            return rng.NextLong(long.MinValue, max, inclusiveUpperBound);
-        }
-
-        //returns a uniformly random long between Min and Max without modulo bias
-        public static long NextLong(this Random rng, long min, long max, bool inclusiveUpperBound = false)
-        {
-            ulong range = (ulong)(max - min);
-
-            if (inclusiveUpperBound)
-            {
-                if (range == ulong.MaxValue)
-                {
-                    return rng.NextLong();
-                }
-                range++;
-            }
-
-            if (range <= 0)
-            {
-                return 0;
-            }
-
-            ulong limit = ulong.MaxValue - ulong.MaxValue % range;
-            ulong r;
-            do
-            {
-                r = rng.NextULong();
-            } while (r > limit);
-            return (long)(r % range + (ulong)min);
-        }
     }
 
     public static class ObjectCopier

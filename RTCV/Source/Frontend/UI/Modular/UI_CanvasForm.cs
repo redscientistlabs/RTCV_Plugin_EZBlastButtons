@@ -6,6 +6,7 @@
     using System.Windows.Forms;
     using RTCV.Common;
 
+    #pragma warning disable CA2213 //Component designer classes generate their own Dispose method
     public partial class UI_CanvasForm : Form, IBlockable
     {
         public static UI_CanvasForm mainForm;
@@ -113,7 +114,7 @@
             return outForm;
         }
 
-        public void ResizeCanvas(UI_CanvasForm targetForm, CanvasGrid canvasGrid)
+        public void ResizeCanvas(CanvasGrid canvasGrid)
         {
             this.SetSize(getTilePos(canvasGrid.x), getTilePos(canvasGrid.y));
         }
@@ -132,7 +133,7 @@
 
         public static void loadTileForm(UI_CanvasForm targetForm, CanvasGrid canvasGrid)
         {
-            targetForm.ResizeCanvas(targetForm, canvasGrid);
+            targetForm.ResizeCanvas(canvasGrid);
 
             for (int x = 0; x < canvasGrid.x; x++)
             {

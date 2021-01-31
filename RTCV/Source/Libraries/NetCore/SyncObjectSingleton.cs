@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Windows.Forms;
+    using RTCV.NetCore.NetCore_Extensions;
 
     public static class SyncObjectSingleton
     {
@@ -75,7 +76,7 @@
             }
         }
 
-        public static void SyncObjectExecute(Form sync, Action<object, EventArgs> a, object[] args = null)
+        public static void SyncObjectExecute(Form sync, Action<object, EventArgs> a)
         {
             if (sync.InvokeRequired)
             {

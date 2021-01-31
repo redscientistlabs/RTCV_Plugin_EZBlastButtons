@@ -1,4 +1,4 @@
-﻿namespace StreamerBoard.UI
+﻿namespace EasyBlast.UI
 {
     partial class PluginForm
     {
@@ -215,7 +215,7 @@
             this.MinimumSize = new System.Drawing.Size(670, 422);
             this.Name = "PluginForm";
             this.Tag = "";
-            this.Text = "Easy Manual Blast Board";
+            this.Text = "Easy Blast Board";
             this.pRadioButtons.ResumeLayout(false);
             this.pRadioButtons.PerformLayout();
             this.ResumeLayout(false);

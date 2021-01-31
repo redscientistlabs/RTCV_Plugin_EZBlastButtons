@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using StreamerBoard;
+using EasyBlast;
 using RTCV.CorruptCore;
 using RTCV.NetCore;
 using RTCV.Common;
-using StreamerBoard.UI;
+using EasyBlast.UI;
 
-namespace StreamerBoard
+namespace EasyBlast
 {
     /// <summary>
     /// This lies on the RTC(Server) side

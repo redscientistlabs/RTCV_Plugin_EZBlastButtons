@@ -7,8 +7,8 @@
     <ProjectGuid>{759931D4-4C0D-40BD-AF55-CACCC6F74FBD}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>StreamerBoard</RootNamespace>
-    <AssemblyName>EasyManualBlast</AssemblyName>
+    <RootNamespace>EasyBlast</RootNamespace>
+    <AssemblyName>EasyBlast</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>

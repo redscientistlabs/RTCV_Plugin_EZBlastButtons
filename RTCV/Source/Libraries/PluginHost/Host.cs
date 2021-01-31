@@ -8,7 +8,7 @@ namespace RTCV.PluginHost
     using System.Reflection;
     using NLog;
 
-    public class Host
+    public class Host : IDisposable
     {
         #pragma warning disable CS0649 //plugins are assigned by MEF, so "never assigned to" warning doesn't apply
         [ImportMany(typeof(IPlugin))]
@@ -28,7 +28,7 @@ namespace RTCV.PluginHost
             AppDomain.CurrentDomain.AssemblyLoad += CurrentDomain_AssemblyLoad;
         }
 
-        private void initialize(string[] pluginDirs, RTCSide side)
+        private void initialize(string[] pluginDirs)
         {
             var catalog = new AggregateCatalog();
             foreach (var dir in pluginDirs)
@@ -55,7 +55,7 @@ namespace RTCV.PluginHost
                 logger.Error(new InvalidOperationException("Host has already been started."));
             }
 
-            initialize(pluginDirs, side);
+            initialize(pluginDirs);
 
             foreach (var p in plugins)
             {
@@ -93,6 +93,11 @@ namespace RTCV.PluginHost
             {
                 p.Stop();
             }
+        }
+
+        public void Dispose()
+        {
+            _container?.Dispose();
         }
 
         //We want people to be able to pack their plugins into singular binaries and Costura Fody seems like a good option

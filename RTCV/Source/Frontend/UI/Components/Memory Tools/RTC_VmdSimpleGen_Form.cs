@@ -2,13 +2,12 @@
 {
     using System;
     using System.Data;
-    using System.Globalization;
     using System.Linq;
     using System.Windows.Forms;
     using RTCV.CorruptCore;
     using RTCV.Common;
     using RTCV.UI.Components.Controls;
-    using static RTCV.UI.UI_Extensions;
+    using RTCV.UI.Modular;
 
     public partial class RTC_VmdSimpleGen_Form : ComponentForm, IAutoColorize, IBlockable
     {
@@ -84,26 +83,6 @@
             btnGenerateVMD.Enabled = true;
         }
 
-        public long SafeStringToLong(string input)
-        {
-            try
-            {
-                if (input.IndexOf("0X", StringComparison.OrdinalIgnoreCase) >= 0)
-                {
-                    return long.Parse(input.Substring(2), NumberStyles.HexNumber);
-                }
-                else
-                {
-                    return long.Parse(input, NumberStyles.HexNumber);
-                }
-            }
-            catch (FormatException e)
-            {
-                Console.Write(e);
-                return -1;
-            }
-        }
-
         private void btnGenerateVMD_Click(object sender, EventArgs e)
         {
             GenerateVMD();
@@ -172,48 +151,7 @@
                     trimmedLine = trimmedLine.Substring(1);
                 }
 
-                string[] lineParts = trimmedLine.Split('-');
-
-                if (lineParts.Length > 1)
-                {
-                    long start = SafeStringToLong(lineParts[0]);
-                    long end = SafeStringToLong(lineParts[1]);
-
-                    if (end < start)
-                    {
-                        continue;
-                    }
-
-                    if (end >= currentDomainSize)
-                    {
-                        end = Convert.ToInt64(currentDomainSize - 1);
-                    }
-
-                    if (remove)
-                    {
-                        proto.RemoveRanges.Add(new long[] { start, end });
-                    }
-                    else
-                    {
-                        proto.AddRanges.Add(new long[] { start, end });
-                    }
-                }
-                else
-                {
-                    long address = SafeStringToLong(lineParts[0]);
-
-                    if (address > 0 && address < currentDomainSize)
-                    {
-                        if (remove)
-                        {
-                            proto.RemoveSingles.Add(address);
-                        }
-                        else
-                        {
-                            proto.AddSingles.Add(address);
-                        }
-                    }
-                }
+                proto.AddFromTrimmedLine(trimmedLine, currentDomainSize, remove);
             }
 
             if (proto.AddRanges.Count == 0 && proto.AddSingles.Count == 0)

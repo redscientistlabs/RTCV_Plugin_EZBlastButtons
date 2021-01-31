@@ -5,7 +5,7 @@ namespace RTCV.UI
     using System.Windows.Forms;
     using RTCV.CorruptCore;
     using RTCV.Common;
-    using static RTCV.UI.UI_Extensions;
+    using RTCV.UI.Modular;
 
     public partial class RTC_MyVMDs_Form : ComponentForm, IAutoColorize, IBlockable
     {
@@ -16,23 +16,23 @@ namespace RTCV.UI
         {
             InitializeComponent();
             AllowDrop = true;
-            this.DragEnter += RTC_VmdPool_Form_DragEnter;
-            this.DragDrop += RTC_VmdPool_Form_DragDrop;
+            this.DragEnter += RTC_MyVMDs_Form_DragEnter;
+            this.DragDrop += RTC_MyVMDs_Form_DragDrop;
         }
 
-        private void RTC_VmdPool_Form_DragEnter(object sender, DragEventArgs e)
+        public void RTC_MyVMDs_Form_DragEnter(object sender, DragEventArgs e)
         {
             e.Effect = DragDropEffects.Link;
         }
 
-        private void RTC_VmdPool_Form_DragDrop(object sender, DragEventArgs e)
+        public void RTC_MyVMDs_Form_DragDrop(object sender, DragEventArgs e)
         {
             string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
             foreach (var f in files)
             {
                 if (f.Contains(".vmd"))
                 {
-                    importVmd(f);
+                    ImportVMD(f);
                 }
             }
             RefreshVMDs();
@@ -45,7 +45,7 @@ namespace RTCV.UI
 
             foreach (var item in lbLoadedVmdList.SelectedItems)
             {
-                string vmdPath = Path.Combine(RtcCore.vmdsDir, item.ToString());
+                string vmdPath = Path.Combine(RtcCore.VmdsDir, item.ToString());
 
                 if (File.Exists(vmdPath))
                     File.Delete(vmdPath);
@@ -58,10 +58,10 @@ namespace RTCV.UI
         {
             lbLoadedVmdList.Items.Clear();
 
-            if (!Directory.Exists(RtcCore.vmdsDir))
-                Directory.CreateDirectory(RtcCore.vmdsDir);
+            if (!Directory.Exists(RtcCore.VmdsDir))
+                Directory.CreateDirectory(RtcCore.VmdsDir);
 
-            var files = Directory.GetFiles(RtcCore.vmdsDir);
+            var files = Directory.GetFiles(RtcCore.VmdsDir);
             foreach (var file in files)
             {
                 string shortfile = file.Substring(file.LastIndexOf('\\') + 1);
@@ -77,7 +77,7 @@ namespace RTCV.UI
 
         private static void RenameVMD(string vmdName)
         {
-            string vmdPath = Path.Combine(RtcCore.vmdsDir, vmdName);
+            string vmdPath = Path.Combine(RtcCore.VmdsDir, vmdName);
             string name = "";
             string value = vmdName.Trim().Replace("[V]", "");
             string path = "";
@@ -85,7 +85,7 @@ namespace RTCV.UI
             {
                 name = value.Trim();
 
-                path = Path.Combine(RtcCore.vmdsDir, name + ".vmd");
+                path = Path.Combine(RtcCore.VmdsDir, name + ".vmd");
             }
             else
             {
@@ -138,7 +138,7 @@ namespace RTCV.UI
                 return;
 
             string vmdName = lbLoadedVmdList.SelectedItem.ToString();
-            string path = Path.Combine(RtcCore.vmdsDir, vmdName);
+            string path = Path.Combine(RtcCore.VmdsDir, vmdName);
 
             SaveFileDialog saveFileDialog1 = new SaveFileDialog
             {
@@ -151,36 +151,22 @@ namespace RTCV.UI
 
             if (saveFileDialog1.ShowDialog() == DialogResult.OK)
             {
-                string filename = saveFileDialog1.FileName;
-
-
-                if (File.Exists(filename))
-                    File.Delete(filename);
-
-                File.Copy(path, filename);
+                var filename = saveFileDialog1.FileName;
+                Common.ReplaceFile(path, filename);
             }
         }
 
-        private void importVmd(string path)
+        private void ImportVMD(string filename)
         {
-            string shortPath = path.Substring(path.LastIndexOf('\\') + 1);
-            string targetPath = Path.Combine(RtcCore.vmdsDir, shortPath);
-
-            if (File.Exists(targetPath))
+            try
             {
-                var result = MessageBox.Show("This file already exist in your VMDs folder, do you want to overwrite it?", "Overwrite file?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-                if (result == DialogResult.No)
-                    return;
-
-                File.Delete(targetPath);
+                Common.CopyFile(filename, RtcCore.VmdsDir, true);
+                RefreshVMDs();
             }
-
-            File.Copy(path, targetPath);
-
-
-            RefreshVMDs();
+            catch (Common.OverwriteCancelledException)
+            {
+            }
         }
-
 
         private void btnLoadVmd_Click(object sender, EventArgs e)
         {
@@ -190,7 +176,7 @@ namespace RTCV.UI
             foreach (var item in lbLoadedVmdList.SelectedItems)
             {
                 string vmdName = item.ToString();
-                string path = Path.Combine(RtcCore.vmdsDir, vmdName);
+                string path = Path.Combine(RtcCore.VmdsDir, vmdName);
 
                 S.GET<RTC_VmdPool_Form>().loadVmd(path, true);
             }
@@ -240,7 +226,7 @@ namespace RTCV.UI
                 {
                     try
                     {
-                        importVmd(filename);
+                        ImportVMD(filename);
                     }
                     catch (Exception ex)
                     {

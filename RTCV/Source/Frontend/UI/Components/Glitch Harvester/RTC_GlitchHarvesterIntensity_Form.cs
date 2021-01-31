@@ -5,7 +5,7 @@
     using RTCV.CorruptCore;
     using RTCV.NetCore;
     using RTCV.Common;
-    using static RTCV.UI.UI_Extensions;
+    using RTCV.UI.Modular;
 
     public partial class RTC_GlitchHarvesterIntensity_Form : ComponentForm, IAutoColorize, IBlockable
     {
@@ -26,10 +26,7 @@
 
             if (paramValue != null && paramValue is int maxintensity)
             {
-                var prevState = multiTB_Intensity.FirstLoadDone;
-                multiTB_Intensity.FirstLoadDone = false;
-                multiTB_Intensity.Maximum = maxintensity;
-                multiTB_Intensity.FirstLoadDone = prevState;
+                multiTB_Intensity.SetMaximum(maxintensity, false);
             }
         }
     }

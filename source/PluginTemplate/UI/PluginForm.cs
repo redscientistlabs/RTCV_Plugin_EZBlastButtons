@@ -1,7 +1,7 @@
 ﻿using RTCV.Common;
 using RTCV.CorruptCore;
 using RTCV.UI;
-using StreamerBoard.Structures;
+using EasyBlast.Structures;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
 
-namespace StreamerBoard.UI
+namespace EasyBlast.UI
 {
     public partial class PluginForm : Form, IAutoColorize
     {
@@ -72,10 +72,10 @@ namespace StreamerBoard.UI
 
             if (paramValue != null && paramValue is int maxintensity)
             {
-                var prevState = multiTB_Intensity.FirstLoadDone;
-                multiTB_Intensity.FirstLoadDone = false;
+                //var prevState = multiTB_Intensity.FirstLoadDone;
+                //multiTB_Intensity.FirstLoadDone = false;
                 multiTB_Intensity.Maximum = maxintensity;
-                multiTB_Intensity.FirstLoadDone = prevState;
+                //multiTB_Intensity.FirstLoadDone = prevState;
             }
         }
 

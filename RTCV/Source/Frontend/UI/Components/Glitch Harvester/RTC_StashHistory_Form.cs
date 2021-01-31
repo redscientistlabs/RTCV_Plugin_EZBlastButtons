@@ -7,6 +7,7 @@ namespace RTCV.UI
     using RTCV.CorruptCore;
     using RTCV.NetCore;
     using RTCV.Common;
+    using RTCV.UI.Modular;
     using static RTCV.UI.UI_Extensions;
 
     public partial class RTC_StashHistory_Form : ComponentForm, IAutoColorize, IBlockable
@@ -26,6 +27,31 @@ namespace RTCV.UI
             this.MouseDoubleClick += ClearSelectedSKs;
 
             lbStashHistory.DataSource = StockpileManager_UISide.StashHistory;
+
+
+            //Registers the drag and drop with the blast edirot form
+            AllowDrop = true;
+            this.DragEnter += RTC_StashHistory_Form_DragEnter;
+            this.DragDrop += RTC_StashHistory_Form_DragDrop;
+        }
+
+        private void RTC_StashHistory_Form_DragDrop(object sender, DragEventArgs e)
+        {
+            string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            foreach (var f in files)
+            {
+                if (f.Contains(".bl"))
+                {
+                    BlastLayer temp = BlastTools.LoadBlastLayerFromFile(f);
+                    StockpileManager_UISide.Import(temp);
+                    S.GET<RTC_StashHistory_Form>().RefreshStashHistory();
+                }
+            }
+        }
+
+        private void RTC_StashHistory_Form_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = DragDropEffects.Link;
         }
 
         public void btnAddStashToStockpile_Click(object sender, EventArgs e) => btnAddStashToStockpile_Click();
