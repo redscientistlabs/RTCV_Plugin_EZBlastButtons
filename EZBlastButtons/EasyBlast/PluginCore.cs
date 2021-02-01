@@ -1,5 +1,5 @@
 ﻿using NLog;
-using EasyBlast.UI;
+using EZBlastButtons.UI;
 using RTCV.Common;
 using RTCV.NetCore;
 using RTCV.PluginHost;
@@ -8,16 +8,16 @@ using System;
 using System.ComponentModel.Composition;
 using System.Windows.Forms;
 
-namespace EasyBlast
+namespace EZBlastButtons
 {
     [Export(typeof(IPlugin))]
-    public class Loader : IPlugin, IDisposable
+    public class PluginCore : IPlugin, IDisposable
     {
         public static RTCSide CurrentSide = RTCSide.Both;
         internal static PluginConnectorEMU connectorEMU = null;
         internal static PluginConnectorRTC connectorRTC = null;
 
-        public string Name => "EZManualBlasts";
+        public string Name => "EZ Blast Buttons";
         public string Description => "A board so you only push one button to do the funny";
 
         public string Author => "NullShock78";
@@ -40,7 +40,7 @@ namespace EasyBlast
             else if (side == RTCSide.Server)
             {
                 connectorRTC = new PluginConnectorRTC();
-                S.GET<RTC_OpenTools_Form>().RegisterTool("Easy Manual Blasts", "Open Easy Manual Blasts", () => { 
+                S.GET<OpenToolsForm>().RegisterTool("EZ Blast Buttons", "Open EZ Blast Buttons", () => { 
                     //This is the method you use to route commands between the RTC side and the Emulator side
                     LocalNetCoreRouter.Route(Endpoint.RTC_SIDE, Commands.SHOW_WINDOW, true); 
                 });
@@ -52,10 +52,20 @@ namespace EasyBlast
 
         public bool Stop()
         {
-            if (Loader.CurrentSide == RTCSide.Server && !S.ISNULL<PluginForm>() && !S.GET<PluginForm>().IsDisposed)
+            if (PluginCore.CurrentSide == RTCSide.Server && !S.ISNULL<PluginForm>() && !S.GET<PluginForm>().IsDisposed)
             {
                 S.GET<PluginForm>().Close();
             }
+            return true;
+        }
+
+        public bool StopPlugin()
+        {
+            if (!S.ISNULL<PluginForm>() && !S.GET<PluginForm>().IsDisposed)
+            {
+                S.GET<PluginForm>().Close();
+            }
+
             return true;
         }
     }

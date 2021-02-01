@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EasyBlast
+namespace EZBlastButtons
 {
     internal static class Endpoint
     {

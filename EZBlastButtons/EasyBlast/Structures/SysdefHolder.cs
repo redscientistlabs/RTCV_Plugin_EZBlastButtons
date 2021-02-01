@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EasyBlast.Structures
+namespace EZBlastButtons.Structures
 {
     //For json
     public class SysDefHolder

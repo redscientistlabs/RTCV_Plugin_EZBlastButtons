@@ -1,4 +1,4 @@
-using EasyBlast.UI;
+using EZBlastButtons.UI;
 using NLog;
 using RTCV.Common;
 using RTCV.CorruptCore;
@@ -6,7 +6,7 @@ using RTCV.NetCore;
 using System;
 using System.Windows.Forms;
 
-namespace EasyBlast
+namespace EZBlastButtons
 {
     /// <summary>
     /// This lies on the Emulator(Client) side

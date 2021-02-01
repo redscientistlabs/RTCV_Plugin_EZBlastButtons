@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using EasyBlast;
+using EZBlastButtons;
 using RTCV.CorruptCore;
 using RTCV.NetCore;
 using RTCV.Common;
-using EasyBlast.UI;
+using EZBlastButtons.UI;
 
-namespace EasyBlast
+namespace EZBlastButtons
 {
     /// <summary>
     /// This lies on the RTC(Server) side

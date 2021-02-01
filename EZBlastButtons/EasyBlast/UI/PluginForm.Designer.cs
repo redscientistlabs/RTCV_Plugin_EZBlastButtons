@@ -1,4 +1,4 @@
-﻿namespace EasyBlast.UI
+﻿namespace EZBlastButtons.UI
 {
     partial class PluginForm
     {
@@ -46,7 +46,7 @@
             // 
             // cbSelectedEngine
             // 
-            this.cbSelectedEngine.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
+            this.cbSelectedEngine.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(32)))), ((int)(((byte)(32)))), ((int)(((byte)(32)))));
             this.cbSelectedEngine.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.cbSelectedEngine.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.cbSelectedEngine.Font = new System.Drawing.Font("Segoe UI", 8F);
@@ -56,7 +56,7 @@
             this.cbSelectedEngine.Name = "cbSelectedEngine";
             this.cbSelectedEngine.Size = new System.Drawing.Size(165, 21);
             this.cbSelectedEngine.TabIndex = 139;
-            this.cbSelectedEngine.Tag = "color:normal";
+            this.cbSelectedEngine.Tag = "color:dark2";
             this.cbSelectedEngine.SelectedIndexChanged += new System.EventHandler(this.cbSelectedEngine_SelectedIndexChanged);
             // 
             // lblSystem
@@ -83,6 +83,7 @@
             // 
             // pRadioButtons
             // 
+            this.pRadioButtons.BackColor = System.Drawing.Color.Transparent;
             this.pRadioButtons.Controls.Add(this.rbSizeLarge);
             this.pRadioButtons.Controls.Add(this.rbSizeMedium);
             this.pRadioButtons.Controls.Add(this.rbSizeSmall);
@@ -132,6 +133,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbButtons.AutoScroll = true;
+            this.gbButtons.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(32)))), ((int)(((byte)(32)))), ((int)(((byte)(32)))));
             this.gbButtons.Location = new System.Drawing.Point(12, 110);
             this.gbButtons.Name = "gbButtons";
             this.gbButtons.Size = new System.Drawing.Size(630, 261);
@@ -155,7 +157,7 @@
             // 
             this.multiTB_Intensity.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.multiTB_Intensity.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.multiTB_Intensity.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
             this.multiTB_Intensity.Checked = false;
             this.multiTB_Intensity.DisplayCheckbox = false;
             this.multiTB_Intensity.Enabled = false;
@@ -168,7 +170,7 @@
             this.multiTB_Intensity.Name = "multiTB_Intensity";
             this.multiTB_Intensity.Size = new System.Drawing.Size(181, 60);
             this.multiTB_Intensity.TabIndex = 145;
-            this.multiTB_Intensity.Tag = "color:dark1";
+            this.multiTB_Intensity.Tag = "color:normal";
             this.multiTB_Intensity.UncapNumericBox = false;
             this.multiTB_Intensity.Value = ((long)(1));
             // 
@@ -200,7 +202,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
             this.ClientSize = new System.Drawing.Size(654, 383);
             this.Controls.Add(this.lblTip);
             this.Controls.Add(this.cbGH);
@@ -214,8 +216,8 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(670, 422);
             this.Name = "PluginForm";
-            this.Tag = "";
-            this.Text = "Easy Blast Board";
+            this.Tag = "color:normal";
+            this.Text = "EZ Blast Buttons";
             this.pRadioButtons.ResumeLayout(false);
             this.pRadioButtons.PerformLayout();
             this.ResumeLayout(false);

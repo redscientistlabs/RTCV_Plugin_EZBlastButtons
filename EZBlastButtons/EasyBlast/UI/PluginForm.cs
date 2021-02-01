@@ -1,7 +1,7 @@
 ﻿using RTCV.Common;
 using RTCV.CorruptCore;
 using RTCV.UI;
-using EasyBlast.Structures;
+using EZBlastButtons.Structures;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,31 +13,47 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Newtonsoft.Json;
+using RTCV.UI.Modular;
+using System.Diagnostics;
 
-namespace EasyBlast.UI
+namespace EZBlastButtons.UI
 {
-    public partial class PluginForm : Form, IAutoColorize
+    public partial class PluginForm : ComponentForm, IColorize
     {
         SystemDef curSys = null;
         SysDefHolder SystemJson = null;
+
+        public static string PluginFolderPath = Path.Combine(RTCV.CorruptCore.RtcCore.PluginDir,nameof(EZBlastButtons));
+        public static string PluginConfigPath = Path.Combine(PluginFolderPath, "EZBlastButtons.json");
+
+        public static PluginForm pForm;
+
         public PluginForm()
         {
             InitializeComponent();
+            pForm = this;
 
             //Bind up multitb
             multiTB_Intensity.ValueChanged += (sender, args) => RTCV.CorruptCore.RtcCore.Intensity = multiTB_Intensity.Value;
-            multiTB_Intensity.registerSlave(S.GET<RTC_GeneralParameters_Form>().multiTB_Intensity);
+            multiTB_Intensity.registerSlave(S.GET<GeneralParametersForm>().multiTB_Intensity);
             //multiTB_Intensity.registerSlave(S.GET<RTC_GeneralParameters_Form>().multiTB_Intensity);
             //S.GET<RTC_GlitchHarvesterIntensity_Form>().multiTB_Intensity.registerSlave(multiTB_Intensity);
             //S.GET<RTC_GeneralParameters_Form>().multiTB_Intensity.registerSlave(multiTB_Intensity);
 
             try
             {
-                SystemJson = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText("./RTC/PLUGINS/EZBlastButtons.json"));
+                if (!Directory.Exists(PluginFolderPath))
+                {
+                    Directory.CreateDirectory(PluginFolderPath);
+                    Process.Start(PluginFolderPath);
+                }
+
+                SystemJson = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(PluginConfigPath));
             }
             catch(FileNotFoundException ex)
             {
                 MessageBox.Show("Missing config file for Easy Manual Blast Buttons", "ERROR: Missing Config File", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Process.Start(PluginFolderPath);
                 throw ex;
             }
             catch(JsonSerializationException ex)
@@ -86,6 +102,7 @@ namespace EasyBlast.UI
 
         private void AddButton(string text, string limiterName, string valueName, long amt, string[] domains)
         {
+
             var hashNameDic = Filtering.Hash2NameDico;
             foreach (var item in hashNameDic)
             {
@@ -98,7 +115,7 @@ namespace EasyBlast.UI
                         Text = text,
                         Height = 50,
                         Width = 150,
-                        BackColor = Color.Gray,
+                        BackColor = pForm.cbSelectedEngine.BackColor,
                         ForeColor = Color.White,
                         Font = new Font("Segoe UI", 8),
                         UseVisualStyleBackColor = false,
@@ -111,12 +128,12 @@ namespace EasyBlast.UI
                     //b.FlatStyle = FlatStyle.Standard;
                     b.Click += (o, e) =>
                     {
-                        var cbE = S.GET<RTC_CorruptionEngine_Form>().cbSelectedEngine;
+                        var cbE = S.GET<CorruptionEngineForm>().cbSelectedEngine;
                         cbE.SelectedItem = "Vector Engine";
                         RTCV.CorruptCore.RtcCore.SelectedEngine = CorruptionEngine.VECTOR;
 
-                        var cbL = S.GET<RTC_CorruptionEngine_Form>().cbVectorLimiterList;
-                        var cbV = S.GET<RTC_CorruptionEngine_Form>().cbVectorValueList;
+                        var cbL = S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorLimiterList;
+                        var cbV = S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorValueList;
                         
                         
                         var cblItems = cbL.Items;
@@ -130,12 +147,12 @@ namespace EasyBlast.UI
                                     if (((ComboBoxItem<string>)cbvItem).Name == lnCv)
                                     {
                                         //Set domains
-                                        S.GET<RTC_MemoryDomains_Form>().SetMemoryDomainsSelectedDomains(domains);
+                                        S.GET<MemoryDomainsForm>().SetMemoryDomainsSelectedDomains(domains);
 
                                         cbL.SelectedItem = cblItem;
-                                        RTC_VectorEngine.LimiterListHash = ((ComboBoxItem<string>)cblItem).Value;
+                                        VectorEngine.LimiterListHash = ((ComboBoxItem<string>)cblItem).Value;
                                         cbV.SelectedItem = cbvItem;
-                                        RTC_VectorEngine.ValueListHash = ((ComboBoxItem<string>)cbvItem).Value;
+                                        VectorEngine.ValueListHash = ((ComboBoxItem<string>)cbvItem).Value;
                                         if (!cbManualIntensity.Checked)
                                         {
                                             long finalIntensity = (long)((double)intensity * (rbSizeSmall.Checked ? 0.5 : rbSizeMedium.Checked ? 1 : 2));
@@ -148,7 +165,7 @@ namespace EasyBlast.UI
                                             try
                                             {
                                                 ((Button)o).Enabled = false;
-                                                S.GET<RTC_GlitchHarvesterBlast_Form>().btnCorrupt_Click(null, null);
+                                                S.GET<GlitchHarvesterBlastForm>().btnCorrupt_MouseDown(null, null);
                                                 ((Button)o).Enabled = true;
                                             }
                                             catch(Exception ex)
@@ -174,7 +191,7 @@ namespace EasyBlast.UI
                                             try
                                             {
                                                 ((Button)o).Enabled = false;
-                                                S.GET<UI_CoreForm>().btnManualBlast_Click(null, null);
+                                                S.GET<CoreForm>().btnManualBlast_MouseDown(null, null);
                                                 ((Button)o).Enabled = true;
                                             }
                                             catch (Exception ex)
@@ -231,5 +248,6 @@ namespace EasyBlast.UI
                 multiTB_Intensity.Enabled = false;
             }
         }
+
     }
 }
