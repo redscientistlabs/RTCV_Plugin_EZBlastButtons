@@ -8,7 +8,7 @@ namespace EZBlastButtons
 {
     internal static class Endpoint
     {
-        public const string PREFIX = "YOURPREFIX";
+        public const string PREFIX = "EZBLAST";
         public const string EMU_SIDE = PREFIX + "EMU";
         public const string RTC_SIDE = PREFIX + "RTC";
     }

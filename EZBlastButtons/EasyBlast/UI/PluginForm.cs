@@ -15,13 +15,14 @@ using System.Windows.Forms;
 using Newtonsoft.Json;
 using RTCV.UI.Modular;
 using System.Diagnostics;
+using RTCV.NetCore;
 
 namespace EZBlastButtons.UI
 {
     public partial class PluginForm : ComponentForm, IColorize
     {
         SystemDef curSys = null;
-        SysDefHolder SystemJson = null;
+        SysDefHolder SetsJson = null;
 
         public static string PluginFolderPath = Path.Combine(RTCV.CorruptCore.RtcCore.PluginDir,nameof(EZBlastButtons));
         public static string PluginConfigPath = Path.Combine(PluginFolderPath, "EZBlastButtons.json");
@@ -36,9 +37,6 @@ namespace EZBlastButtons.UI
             //Bind up multitb
             multiTB_Intensity.ValueChanged += (sender, args) => RTCV.CorruptCore.RtcCore.Intensity = multiTB_Intensity.Value;
             multiTB_Intensity.registerSlave(S.GET<GeneralParametersForm>().multiTB_Intensity);
-            //multiTB_Intensity.registerSlave(S.GET<RTC_GeneralParameters_Form>().multiTB_Intensity);
-            //S.GET<RTC_GlitchHarvesterIntensity_Form>().multiTB_Intensity.registerSlave(multiTB_Intensity);
-            //S.GET<RTC_GeneralParameters_Form>().multiTB_Intensity.registerSlave(multiTB_Intensity);
 
             try
             {
@@ -48,7 +46,7 @@ namespace EZBlastButtons.UI
                     Process.Start(PluginFolderPath);
                 }
 
-                SystemJson = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(PluginConfigPath));
+                SetsJson = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(PluginConfigPath));
             }
             catch(FileNotFoundException ex)
             {
@@ -62,16 +60,16 @@ namespace EZBlastButtons.UI
                 throw ex;
             }
 
-            foreach (var item in SystemJson.Systems)
+            foreach (var item in SetsJson.Systems)
             {
                 cbSelectedEngine.Items.Add(item.Key);
             }
 
             if (cbSelectedEngine.Items.Count > 0)
             {
-                var ind = cbSelectedEngine.Items.IndexOf("GCN / Wii General");
-                cbSelectedEngine.SelectedIndex = ind > -1 ? ind : 0;
-                curSys = SystemJson.Systems[cbSelectedEngine.SelectedItem.ToString()];
+                //var ind = cbSelectedEngine.Items.IndexOf("GCN / Wii General");
+                cbSelectedEngine.SelectedIndex = 0;//ind > -1 ? ind : 0;
+                curSys = SetsJson.Systems[cbSelectedEngine.SelectedItem.ToString()];
             }
             else
             {
@@ -165,7 +163,8 @@ namespace EZBlastButtons.UI
                                             try
                                             {
                                                 ((Button)o).Enabled = false;
-                                                S.GET<GlitchHarvesterBlastForm>().btnCorrupt_MouseDown(null, null);
+                                                S.GET<GlitchHarvesterBlastForm>().Corrupt(null, null);
+                                                //.btnCorrupt_MouseDown(null, null);
                                                 ((Button)o).Enabled = true;
                                             }
                                             catch(Exception ex)
@@ -173,7 +172,7 @@ namespace EZBlastButtons.UI
                                                 ((Button)o).Enabled = true;
                                                 throw ex;
                                             }
-                                                //try
+                                            //try
                                             //{
                                             //    //int ind = S.GET<RTC_StockpilePlayer_Form>().dgvStockpile.SelectedRows[0].Index;
                                             //    //typeof(RTC_StockpilePlayer_Form).GetMethod("dgvStockpile_CellClick").Invoke(S.GET<RTC_StockpilePlayer_Form>(),
@@ -191,7 +190,7 @@ namespace EZBlastButtons.UI
                                             try
                                             {
                                                 ((Button)o).Enabled = false;
-                                                S.GET<CoreForm>().btnManualBlast_MouseDown(null, null);
+                                                S.GET<CoreForm>().ManualBlast(null, null);// .btnManualBlast_MouseDown(null, null);
                                                 ((Button)o).Enabled = true;
                                             }
                                             catch (Exception ex)
@@ -219,19 +218,85 @@ namespace EZBlastButtons.UI
             if (curSys != null)
             {
                 gbButtons.Controls.Clear();
-                foreach (var item in curSys.Buttons)
+                if (curSys.Buttons.Count > 0)
                 {
-                    AddButton(item.Name,item.Limiter, item.Value, item.Intensity, item.Domains);
+                    foreach (var item in curSys.Buttons)
+                    {
+                        AddButton(item.Name, item.Limiter, item.Value, item.Intensity, item.Domains);
+                    }
+                }
+                AddAddButton();
+            }
+        }
+
+        private void AddAddButton()
+        {
+            Button b = new Button()
+            {
+                Name = $"Add Button",
+                Text = "Add Button..",
+                Height = 50,
+                Width = 150,
+                BackColor = pForm.cbSelectedEngine.BackColor,
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 8),
+                UseVisualStyleBackColor = false,
+                FlatStyle = FlatStyle.Flat,
+                Tag = "color:light1"
+            };
+
+            b.Click += AddCurrentConfigAsButton;
+            gbButtons.Controls.Add(b);
+        }
+
+
+        private void AddCurrentConfigAsButton(object sender, EventArgs e)
+        {
+
+            string s = Prompt.ShowDialog("Name", "Enter Button Name");
+            if (!string.IsNullOrWhiteSpace(s))
+            {
+                string[] selectedDomains = (string[])AllSpec.UISpec["SELECTEDDOMAINS"];
+                var selectedLim = ((ComboBoxItem<string>)S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorLimiterList.SelectedItem)?.Name.ToString();
+                var selectedVal = ((ComboBoxItem<string>)S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorValueList.SelectedItem)?.Name.ToString();
+                var intensity = RTCV.CorruptCore.RtcCore.Intensity;
+
+                ((Button)sender).Click -= AddCurrentConfigAsButton;
+                gbButtons.Controls.Remove((Control)sender);
+
+                curSys.Buttons.Add(new ButtonDef() { Name = s, Limiter = selectedLim, Value = selectedVal, Intensity = intensity, Domains = selectedDomains });
+                AddButton(s, selectedLim, selectedVal, intensity, selectedDomains);
+                Save();
+                AddAddButton();
+
+            }
+        }
+
+        private void Save()
+        {
+            JsonSerializer serializer = new JsonSerializer();
+            serializer.NullValueHandling = NullValueHandling.Ignore;
+            serializer.Formatting = Formatting.Indented;
+
+            using (StreamWriter sw = new StreamWriter(PluginConfigPath))
+            {
+                using (JsonWriter writer = new JsonTextWriter(sw))
+                {
+                    serializer.Serialize(writer, SetsJson);
                 }
             }
         }
 
+        private bool updating = false;
         private void cbSelectedEngine_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (SystemJson.Systems.ContainsKey(cbSelectedEngine.SelectedItem.ToString()))
+            if (!updating)
             {
-                curSys = SystemJson.Systems[cbSelectedEngine.SelectedItem.ToString()];
-                Populate();
+                if (SetsJson.Systems.ContainsKey(cbSelectedEngine.SelectedItem.ToString()))
+                {
+                    curSys = SetsJson.Systems[cbSelectedEngine.SelectedItem.ToString()];
+                    Populate();
+                }
             }
         }
 
@@ -246,6 +311,53 @@ namespace EZBlastButtons.UI
             {
                 pRadioButtons.Enabled = true;
                 multiTB_Intensity.Enabled = false;
+            }
+        }
+
+        private void bNewSet_Click(object sender, EventArgs e)
+        {
+            string s = Prompt.ShowDialog("Name", "Enter Set Name");
+            if (!string.IsNullOrWhiteSpace(s))
+            {
+                SetsJson.Systems.Add(s, new SystemDef() { Buttons = new List<ButtonDef>() });
+                Save();
+                updating = true;
+                cbSelectedEngine.Items.Clear();
+                foreach (var item in SetsJson.Systems)
+                {
+                    cbSelectedEngine.Items.Add(item.Key);
+                }
+                updating = false;
+                cbSelectedEngine.SelectedIndex = cbSelectedEngine.Items.IndexOf(s);
+                //AddAddButton();
+                //curSys = SetsJson.Systems[s];
+                //Populate();
+            }
+        }
+
+        //https://stackoverflow.com/questions/5427020/prompt-dialog-in-windows-forms
+        public static class Prompt
+        {
+            public static string ShowDialog(string text, string caption)
+            {
+                Form prompt = new Form()
+                {
+                    Width = 500,
+                    Height = 150,
+                    FormBorderStyle = FormBorderStyle.FixedDialog,
+                    Text = caption,
+                    StartPosition = FormStartPosition.CenterScreen
+                };
+                Label textLabel = new Label() { Left = 50, Top = 20, Text = text };
+                TextBox textBox = new TextBox() { Left = 50, Top = 50, Width = 400 };
+                Button confirmation = new Button() { Text = "OK", Left = 350, Width = 100, Top = 70, DialogResult = DialogResult.OK };
+                confirmation.Click += (sender, e) => { prompt.Close(); };
+                prompt.Controls.Add(textBox);
+                prompt.Controls.Add(confirmation);
+                prompt.Controls.Add(textLabel);
+                prompt.AcceptButton = confirmation;
+
+                return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
             }
         }
 
