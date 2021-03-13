@@ -22,7 +22,7 @@ namespace EZBlastButtons
 
         public string Author => "NullShock78";
 
-        public Version Version => new Version(1, 0, 0);
+        public Version Version => new Version(2, 0, 0);
 
         public RTCSide SupportedSide => RTCSide.Both;
 
