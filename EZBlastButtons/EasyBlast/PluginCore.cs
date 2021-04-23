@@ -50,20 +50,14 @@ namespace EZBlastButtons
             return true;
         }
 
-        public bool Stop()
-        {
-            if (PluginCore.CurrentSide == RTCSide.Server && !S.ISNULL<PluginForm>() && !S.GET<PluginForm>().IsDisposed)
-            {
-                S.GET<PluginForm>().Close();
-            }
-            return true;
-        }
-
         public bool StopPlugin()
         {
             if (!S.ISNULL<PluginForm>() && !S.GET<PluginForm>().IsDisposed)
             {
-                S.GET<PluginForm>().Close();
+                SyncObjectSingleton.FormExecute(() =>
+                {
+                    S.GET<PluginForm>().Close();
+                });
             }
 
             return true;
