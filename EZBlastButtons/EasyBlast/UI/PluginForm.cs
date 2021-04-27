@@ -30,6 +30,8 @@ namespace EZBlastButtons.UI
         public static PluginForm pForm;
         string prevDoms = "";
 
+        HashSet<string> validDomains = new HashSet<string>();
+
         public PluginForm()
         {
             InitializeComponent();
@@ -46,29 +48,30 @@ namespace EZBlastButtons.UI
                     {
                         if (ofd.ShowDialog() == DialogResult.OK)
                         {
-                            List<string> duplicates = new List<string>();
-                            bool hasDuplicates = false;
-                            var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(ofd.FileName));
-                            foreach (var item in import.Systems)
-                            {
-                                if (!AllSets.Systems.ContainsKey(item.Key))
-                                {
-                                    AllSets.Systems.Add(item.Key, item.Value);
-                                }
-                                else
-                                {
-                                    hasDuplicates = true;
-                                    duplicates.Add(item.Key);
-                                }
-                            }
-                            Save();
-                            UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
-                            Populate();
+                            Import(ofd.FileName);
+                            //List<string> duplicates = new List<string>();
+                            //bool hasDuplicates = false;
+                            //var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(ofd.FileName));
+                            //foreach (var item in import.Systems)
+                            //{
+                            //    if (!AllSets.Systems.ContainsKey(item.Key))
+                            //    {
+                            //        AllSets.Systems.Add(item.Key, item.Value);
+                            //    }
+                            //    else
+                            //    {
+                            //        hasDuplicates = true;
+                            //        duplicates.Add(item.Key);
+                            //    }
+                            //}
+                            //Save();
+                            //UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
+                            //Populate();
 
-                            if (hasDuplicates)
-                            {
-                                MessageBox.Show($"The following sets were duplicates and not imported:{string.Join(", ", duplicates)}", "Duplicate Sets", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            }
+                            //if (hasDuplicates)
+                            //{
+                            //    MessageBox.Show($"The following sets were duplicates and not imported:{string.Join(", ", duplicates)}", "Duplicate Sets", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            //}
                         }
                     }
                     
@@ -119,6 +122,22 @@ namespace EZBlastButtons.UI
                 else
                 {
                     AllSets = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(PluginConfigPath));
+                    var extraFiles = Directory.GetFiles(PluginFolderPath).Where(x => x != PluginConfigPath && Path.GetExtension(x)?.ToLower() == ".json");
+                    foreach(var f in extraFiles)
+                    {
+                        try
+                        {
+                            ImportSilent(f);
+                            File.Delete(f);
+                        }
+                        catch
+                        {
+                            MessageBox.Show($"File {f} is not a valid ez blast file", "Invalid file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                    }
+                    Save();
+                    //UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
+                    //Populate();
                 }
             }
             //catch(FileNotFoundException ex)
@@ -138,6 +157,50 @@ namespace EZBlastButtons.UI
             this.Load += PluginForm_Load;
             this.FormClosed += PluginForm_FormClosed;
             this.Shown += PluginForm_Shown;
+        }
+
+        void Import(string file)
+        {
+            List<string> duplicates = new List<string>();
+            bool hasDuplicates = false;
+            var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(file));
+            foreach (var item in import.Systems)
+            {
+                if (!AllSets.Systems.ContainsKey(item.Key))
+                {
+                    AllSets.Systems.Add(item.Key, item.Value);
+                }
+                else
+                {
+                    hasDuplicates = true;
+                    duplicates.Add(item.Key);
+                }
+            }
+            Save();
+            UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
+            Populate();
+
+            if (hasDuplicates)
+            {
+                MessageBox.Show($"The following sets were duplicates and not imported:{string.Join(", ", duplicates)}", "Duplicate Sets", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        void ImportSilent(string file)
+        {
+            var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(file));
+            foreach (var item in import.Systems)
+            {
+                if (!AllSets.Systems.ContainsKey(item.Key))
+                {
+                    AllSets.Systems.Add(item.Key, item.Value);
+                }
+            }
+        }
+
+        private string[] GetValidDomains(params string[] doms)
+        {
+            return doms.Where(x => MemoryDomains.AllMemoryInterfaces.ContainsKey(x)).ToArray();
         }
 
         private void PluginForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -219,15 +282,16 @@ namespace EZBlastButtons.UI
             if(hashNameDic.Values.Contains(buttonDef.Limiter) && hashNameDic.Values.Contains(buttonDef.Value))
             {
                 var doms = S.GET<MemoryDomainsForm>().lbMemoryDomains.Items;
-                
+                bool hasValidDomain = false;
                 foreach (var dom in buttonDef.Domains)
                 {
-                    if (!doms.Contains(dom))
+                    if (doms.Contains(dom))
                     {
-                        return false;
+                        hasValidDomain = true;
+                        break;
                     }
                 }
-                return true;
+                return hasValidDomain;
             }
             else
             {
@@ -283,7 +347,7 @@ namespace EZBlastButtons.UI
                                     if (((ComboBoxItem<string>)cbvItem).Name == lnCv)
                                     {
                                     //Set domains
-                                    S.GET<MemoryDomainsForm>().SetMemoryDomainsSelectedDomains(buttonDef.Domains);
+                                    S.GET<MemoryDomainsForm>().SetMemoryDomainsSelectedDomains(GetValidDomains(buttonDef.Domains));
 
                                         cbL.SelectedItem = cblItem;
                                         VectorEngine.LimiterListHash = ((ComboBoxItem<string>)cblItem).Value;
@@ -519,5 +583,6 @@ namespace EZBlastButtons.UI
         {
             Populate();
         }
+
     }
 }

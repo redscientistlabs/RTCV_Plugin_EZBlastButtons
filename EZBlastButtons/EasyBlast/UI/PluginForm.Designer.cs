@@ -159,7 +159,7 @@
             this.rbSizeLarge.Location = new System.Drawing.Point(5, 68);
             this.rbSizeLarge.Margin = new System.Windows.Forms.Padding(4);
             this.rbSizeLarge.Name = "rbSizeLarge";
-            this.rbSizeLarge.Size = new System.Drawing.Size(39, 20);
+            this.rbSizeLarge.Size = new System.Drawing.Size(36, 17);
             this.rbSizeLarge.TabIndex = 2;
             this.rbSizeLarge.Text = "2x";
             this.rbSizeLarge.UseVisualStyleBackColor = true;
@@ -172,7 +172,7 @@
             this.rbSizeMedium.Location = new System.Drawing.Point(5, 39);
             this.rbSizeMedium.Margin = new System.Windows.Forms.Padding(4);
             this.rbSizeMedium.Name = "rbSizeMedium";
-            this.rbSizeMedium.Size = new System.Drawing.Size(39, 20);
+            this.rbSizeMedium.Size = new System.Drawing.Size(36, 17);
             this.rbSizeMedium.TabIndex = 1;
             this.rbSizeMedium.TabStop = true;
             this.rbSizeMedium.Text = "1x";
@@ -185,7 +185,7 @@
             this.rbSizeSmall.Location = new System.Drawing.Point(5, 12);
             this.rbSizeSmall.Margin = new System.Windows.Forms.Padding(4);
             this.rbSizeSmall.Name = "rbSizeSmall";
-            this.rbSizeSmall.Size = new System.Drawing.Size(49, 20);
+            this.rbSizeSmall.Size = new System.Drawing.Size(45, 17);
             this.rbSizeSmall.TabIndex = 0;
             this.rbSizeSmall.Text = "0.5x";
             this.rbSizeSmall.UseVisualStyleBackColor = true;
