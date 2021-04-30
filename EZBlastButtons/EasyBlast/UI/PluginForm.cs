@@ -157,6 +157,8 @@ namespace EZBlastButtons.UI
             this.Load += PluginForm_Load;
             this.FormClosed += PluginForm_FormClosed;
             this.Shown += PluginForm_Shown;
+
+            this.version.Text = $"{PluginCore.Ver.ToString()}"; //automatic window title
         }
 
         void Import(string file)

@@ -44,6 +44,8 @@
             this.cbSelectedEngine = new System.Windows.Forms.ComboBox();
             this.bDeleteSet = new System.Windows.Forms.Button();
             this.cbViewHidden = new System.Windows.Forms.CheckBox();
+            this.version = new System.Windows.Forms.Label();
+            this.label1 = new System.Windows.Forms.Label();
             this.pRadioButtons.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -54,7 +56,7 @@
             this.bNewSet.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.bNewSet.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.bNewSet.ForeColor = System.Drawing.Color.White;
-            this.bNewSet.Location = new System.Drawing.Point(199, 37);
+            this.bNewSet.Location = new System.Drawing.Point(199, 57);
             this.bNewSet.Margin = new System.Windows.Forms.Padding(4);
             this.bNewSet.Name = "bNewSet";
             this.bNewSet.Size = new System.Drawing.Size(50, 34);
@@ -84,7 +86,7 @@
             this.cbGH.AutoSize = true;
             this.cbGH.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.cbGH.ForeColor = System.Drawing.Color.White;
-            this.cbGH.Location = new System.Drawing.Point(16, 110);
+            this.cbGH.Location = new System.Drawing.Point(16, 113);
             this.cbGH.Margin = new System.Windows.Forms.Padding(4);
             this.cbGH.Name = "cbGH";
             this.cbGH.Size = new System.Drawing.Size(121, 17);
@@ -207,7 +209,7 @@
             this.lblSystem.AutoSize = true;
             this.lblSystem.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.lblSystem.ForeColor = System.Drawing.Color.White;
-            this.lblSystem.Location = new System.Drawing.Point(12, 23);
+            this.lblSystem.Location = new System.Drawing.Point(12, 45);
             this.lblSystem.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSystem.Name = "lblSystem";
             this.lblSystem.Size = new System.Drawing.Size(64, 13);
@@ -222,7 +224,7 @@
             this.cbSelectedEngine.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.cbSelectedEngine.ForeColor = System.Drawing.Color.White;
             this.cbSelectedEngine.FormattingEnabled = true;
-            this.cbSelectedEngine.Location = new System.Drawing.Point(16, 43);
+            this.cbSelectedEngine.Location = new System.Drawing.Point(16, 63);
             this.cbSelectedEngine.Margin = new System.Windows.Forms.Padding(4);
             this.cbSelectedEngine.Name = "cbSelectedEngine";
             this.cbSelectedEngine.Size = new System.Drawing.Size(175, 21);
@@ -237,7 +239,7 @@
             this.bDeleteSet.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.bDeleteSet.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.bDeleteSet.ForeColor = System.Drawing.Color.White;
-            this.bDeleteSet.Location = new System.Drawing.Point(257, 37);
+            this.bDeleteSet.Location = new System.Drawing.Point(257, 57);
             this.bDeleteSet.Margin = new System.Windows.Forms.Padding(4);
             this.bDeleteSet.Name = "bDeleteSet";
             this.bDeleteSet.Size = new System.Drawing.Size(34, 34);
@@ -253,7 +255,7 @@
             this.cbViewHidden.AutoSize = true;
             this.cbViewHidden.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.cbViewHidden.ForeColor = System.Drawing.Color.White;
-            this.cbViewHidden.Location = new System.Drawing.Point(16, 72);
+            this.cbViewHidden.Location = new System.Drawing.Point(16, 90);
             this.cbViewHidden.Margin = new System.Windows.Forms.Padding(4);
             this.cbViewHidden.Name = "cbViewHidden";
             this.cbViewHidden.Size = new System.Drawing.Size(135, 17);
@@ -262,11 +264,35 @@
             this.cbViewHidden.UseVisualStyleBackColor = true;
             this.cbViewHidden.CheckedChanged += new System.EventHandler(this.cbViewHidden_CheckedChanged);
             // 
+            // version
+            // 
+            this.version.AutoSize = true;
+            this.version.Font = new System.Drawing.Font("Verdana", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.version.ForeColor = System.Drawing.Color.White;
+            this.version.Location = new System.Drawing.Point(178, 22);
+            this.version.Name = "version";
+            this.version.Size = new System.Drawing.Size(14, 13);
+            this.version.TabIndex = 152;
+            this.version.Text = "v";
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Segoe UI Light", 18F);
+            this.label1.ForeColor = System.Drawing.Color.White;
+            this.label1.Location = new System.Drawing.Point(8, 7);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(176, 32);
+            this.label1.TabIndex = 151;
+            this.label1.Text = "EZ Blast Buttons";
+            // 
             // PluginForm
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(96)))), ((int)(((byte)(96)))), ((int)(((byte)(96)))));
             this.ClientSize = new System.Drawing.Size(872, 471);
+            this.Controls.Add(this.version);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.cbViewHidden);
             this.Controls.Add(this.bDeleteSet);
             this.Controls.Add(this.bNewSet);
@@ -308,5 +334,7 @@
         private System.Windows.Forms.Button bNewSet;
         private System.Windows.Forms.Button bDeleteSet;
         public System.Windows.Forms.CheckBox cbViewHidden;
+        private System.Windows.Forms.Label version;
+        private System.Windows.Forms.Label label1;
     }
 }
