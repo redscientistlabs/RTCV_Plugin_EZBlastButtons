@@ -456,7 +456,7 @@ namespace EZBlastButtons.UI
             string s = Prompt.ShowDialog("Name", "Enter Button Name");
             if (!string.IsNullOrWhiteSpace(s))
             {
-                string[] selectedDomains = (string[])AllSpec.UISpec["SELECTEDDOMAINS"];
+                string[] selectedDomains = (string[])AllSpec.UISpec[UISPEC.SELECTEDDOMAINS];
                 var selectedLim = ((ComboBoxItem<string>)S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorLimiterList.SelectedItem)?.Name.ToString();
                 var selectedVal = ((ComboBoxItem<string>)S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorValueList.SelectedItem)?.Name.ToString();
                 var intensity = RTCV.CorruptCore.RtcCore.Intensity;
