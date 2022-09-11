@@ -97,12 +97,6 @@
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
     </PackageReference>
-    <PackageReference Include="NLog">
-      <Version>5.0.1</Version>
-    </PackageReference>
-    <PackageReference Include="NLog.Windows.Forms">
-      <Version>4.6.0</Version>
-    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\RTCV\Source\Libraries\Common\Common.csproj">

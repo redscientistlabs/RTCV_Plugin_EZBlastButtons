@@ -1,5 +1,4 @@
-﻿using NLog;
-using EZBlastButtons.UI;
+﻿using EZBlastButtons.UI;
 using RTCV.Common;
 using RTCV.NetCore;
 using RTCV.PluginHost;
@@ -23,7 +22,7 @@ namespace EZBlastButtons
         public string Author => "NullShock78";
 
         public Version Version => Ver;
-        public static Version Ver => new Version(2, 0, 0);
+        public static Version Ver => new Version(2, 0, 1);
 
         public RTCSide SupportedSide => RTCSide.Both;
 
