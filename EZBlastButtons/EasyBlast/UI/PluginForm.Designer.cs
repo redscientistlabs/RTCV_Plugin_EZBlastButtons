@@ -84,6 +84,8 @@
             // cbGH
             // 
             this.cbGH.AutoSize = true;
+            this.cbGH.Checked = true;
+            this.cbGH.CheckState = System.Windows.Forms.CheckState.Checked;
             this.cbGH.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.cbGH.ForeColor = System.Drawing.Color.White;
             this.cbGH.Location = new System.Drawing.Point(16, 113);
@@ -253,6 +255,8 @@
             // cbViewHidden
             // 
             this.cbViewHidden.AutoSize = true;
+            this.cbViewHidden.Checked = true;
+            this.cbViewHidden.CheckState = System.Windows.Forms.CheckState.Checked;
             this.cbViewHidden.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.cbViewHidden.ForeColor = System.Drawing.Color.White;
             this.cbViewHidden.Location = new System.Drawing.Point(16, 90);
@@ -262,6 +266,7 @@
             this.cbViewHidden.TabIndex = 150;
             this.cbViewHidden.Text = "View Hidden Buttons";
             this.cbViewHidden.UseVisualStyleBackColor = true;
+            this.cbViewHidden.Visible = false;
             this.cbViewHidden.CheckedChanged += new System.EventHandler(this.cbViewHidden_CheckedChanged);
             // 
             // version
@@ -282,7 +287,7 @@
             this.label1.ForeColor = System.Drawing.Color.White;
             this.label1.Location = new System.Drawing.Point(8, 7);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(176, 32);
+            this.label1.Size = new System.Drawing.Size(175, 32);
             this.label1.TabIndex = 151;
             this.label1.Text = "EZ Blast Buttons";
             // 

@@ -16,6 +16,10 @@ using Newtonsoft.Json;
 using RTCV.UI.Modular;
 using System.Diagnostics;
 using RTCV.NetCore;
+using System.Xml.Linq;
+using Ceras;
+using RTCV.NetCore.NetCoreExtensions;
+using System.Dynamic;
 
 namespace EZBlastButtons.UI
 {
@@ -29,12 +33,23 @@ namespace EZBlastButtons.UI
 
         public static PluginForm pForm;
         string prevDoms = "";
+        //int ezBlastEngineIndex = 0;
+        Button addButton= null;
+        CerasSerializer saveSerializer = null;
 
         HashSet<string> validDomains = new HashSet<string>();
-
+        CorruptionEngineForm settingsControl;
         public PluginForm()
         {
             InitializeComponent();
+            saveSerializer = CreateSerializer();
+
+            settingsControl = S.GET<CorruptionEngineForm>();
+            settingsControl.cbSelectedEngine.SelectedIndex = C.NightmareEngineIndex;
+            settingsControl.cbSelectedEngine.SelectedIndexChanged += CbSelectedEngine_SelectedIndexChanged;
+
+            //cbSelectedEngine.Items.Add(new { Text = engine.ToString(), Value = engine });
+            
             pForm = this;
             //Bind up multitb
             multiTB_Intensity.ValueChanged += (sender, args) => RTCV.CorruptCore.RtcCore.Intensity = multiTB_Intensity.Value;
@@ -49,29 +64,6 @@ namespace EZBlastButtons.UI
                         if (ofd.ShowDialog() == DialogResult.OK)
                         {
                             Import(ofd.FileName);
-                            //List<string> duplicates = new List<string>();
-                            //bool hasDuplicates = false;
-                            //var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(ofd.FileName));
-                            //foreach (var item in import.Systems)
-                            //{
-                            //    if (!AllSets.Systems.ContainsKey(item.Key))
-                            //    {
-                            //        AllSets.Systems.Add(item.Key, item.Value);
-                            //    }
-                            //    else
-                            //    {
-                            //        hasDuplicates = true;
-                            //        duplicates.Add(item.Key);
-                            //    }
-                            //}
-                            //Save();
-                            //UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
-                            //Populate();
-
-                            //if (hasDuplicates)
-                            //{
-                            //    MessageBox.Show($"The following sets were duplicates and not imported:{string.Join(", ", duplicates)}", "Duplicate Sets", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            //}
                         }
                     }
                     
@@ -99,7 +91,6 @@ namespace EZBlastButtons.UI
                     AllSets.Systems[newName] = set;
                     Save();
                     UpdateSetsComboBox(newName);
-                    //cbSelectedEngine.SelectedIndex = cbSelectedEngine.Items.IndexOf(newName);
                 }
             }));
 
@@ -110,18 +101,19 @@ namespace EZBlastButtons.UI
                 if (!Directory.Exists(PluginFolderPath))
                 {
                     Directory.CreateDirectory(PluginFolderPath);
-                    //Process.Start(PluginFolderPath);
                 }
 
                 if (!File.Exists(PluginConfigPath))
                 {
                     AllSets = new SysDefHolder { Systems = new Dictionary<string, SystemDef>() };
-                    AllSets.Systems.Add("Default", new SystemDef() { Buttons = new List<ButtonDef>() });
+                    AllSets.Systems.Add("Default", new SystemDef() { Buttons = new List<MultiCorruptSettingsPack>() });
                     Save();
                 }
                 else
                 {
-                    AllSets = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(PluginConfigPath));
+
+                    AllSets = saveSerializer.Deserialize<SysDefHolder>(File.ReadAllBytes(PluginConfigPath));
+                    //AllSets = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(PluginConfigPath));
                     var extraFiles = Directory.GetFiles(PluginFolderPath).Where(x => x != PluginConfigPath && Path.GetExtension(x)?.ToLower() == ".json");
                     foreach(var f in extraFiles)
                     {
@@ -136,16 +128,8 @@ namespace EZBlastButtons.UI
                         }
                     }
                     Save();
-                    //UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
-                    //Populate();
                 }
             }
-            //catch(FileNotFoundException ex)
-            //{
-            //    MessageBox.Show("Missing config file for Easy Manual Blast Buttons", "ERROR: Missing Config File", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            //    Process.Start(PluginFolderPath);
-            //    throw ex;
-            //}
             catch(JsonSerializationException ex)
             {
                 MessageBox.Show("ERROR: Easy Manual Blast Buttons config deserialization error", ex.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -154,6 +138,8 @@ namespace EZBlastButtons.UI
 
             UpdateSetsComboBox();
 
+
+
             this.Load += PluginForm_Load;
             this.FormClosed += PluginForm_FormClosed;
             this.Shown += PluginForm_Shown;
@@ -161,43 +147,55 @@ namespace EZBlastButtons.UI
             this.version.Text = $"{PluginCore.Ver.ToString()}"; //automatic window title
         }
 
+        private void CbSelectedEngine_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if(addButton != null)
+            {
+                //TODO: warning for unsupported buttons
+                addButton.Enabled = C.IsEngineSupported(cbSelectedEngine.SelectedIndex);
+            }
+        }
+
         void Import(string file)
         {
-            List<string> duplicates = new List<string>();
-            bool hasDuplicates = false;
-            var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(file));
-            foreach (var item in import.Systems)
-            {
-                if (!AllSets.Systems.ContainsKey(item.Key))
-                {
-                    AllSets.Systems.Add(item.Key, item.Value);
-                }
-                else
-                {
-                    hasDuplicates = true;
-                    duplicates.Add(item.Key);
-                }
-            }
-            Save();
-            UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
-            Populate();
 
-            if (hasDuplicates)
-            {
-                MessageBox.Show($"The following sets were duplicates and not imported:{string.Join(", ", duplicates)}", "Duplicate Sets", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
+            //List<string> duplicates = new List<string>();
+            //bool hasDuplicates = false;
+            //var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(file));
+            //foreach (var item in import.Systems)
+            //{
+            //    if (!AllSets.Systems.ContainsKey(item.Key))
+            //    {
+            //        AllSets.Systems.Add(item.Key, item.Value);
+            //    }
+            //    else
+            //    {
+            //        hasDuplicates = true;
+            //        duplicates.Add(item.Key);
+            //    }
+            //}
+            //Save();
+            //UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
+            //Populate();
+
+            //if (hasDuplicates)
+            //{
+            //    MessageBox.Show($"The following sets were duplicates and not imported:{string.Join(", ", duplicates)}", "Duplicate Sets", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            //}
         }
 
         void ImportSilent(string file)
         {
-            var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(file));
-            foreach (var item in import.Systems)
-            {
-                if (!AllSets.Systems.ContainsKey(item.Key))
-                {
-                    AllSets.Systems.Add(item.Key, item.Value);
-                }
-            }
+            //return;
+            //var import = saveSerializer.Deserialize<SysDefHolder>(File.ReadAllBytes(file));
+            ////var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(file));
+            //foreach (var item in import.Systems)
+            //{
+            //    if (!AllSets.Systems.ContainsKey(item.Key))
+            //    {
+            //        AllSets.Systems.Add(item.Key, item.Value);
+            //    }
+            //}
         }
 
         private string[] GetValidDomains(params string[] doms)
@@ -278,141 +276,117 @@ namespace EZBlastButtons.UI
         }
 
 
-        private bool IsButtonValid(ButtonDef buttonDef)
+        private bool IsEngineSettingValid(EngineSettings EngineSettings)
         {
-            var hashNameDic = Filtering.Hash2NameDico; //cache from allspec
-            if(hashNameDic.Values.Contains(buttonDef.Limiter) && hashNameDic.Values.Contains(buttonDef.Value))
-            {
-                var doms = S.GET<MemoryDomainsForm>().lbMemoryDomains.Items;
-                bool hasValidDomain = false;
-                foreach (var dom in buttonDef.Domains)
-                {
-                    if (doms.Contains(dom))
-                    {
-                        hasValidDomain = true;
-                        break;
-                    }
-                }
-                return hasValidDomain;
-            }
-            else
-            {
-                return false;
-            }
+            return true;
+            //TODO: validation for new system
+
+
+            //var hashNameDic = Filtering.Hash2NameDico; //cache from allspec
+
+
+
+            //if (EngineSettings.EngineType == CorruptionEngine.VECTOR)
+            //    {
+            //        EngineSettings.CachedSpec[RTCSPEC.VECTOR_LIMITERLISTHASH]
+
+            //}
+
+            //if (hashNameDic.Values.Contains(EngineSettings.Limiter) && hashNameDic.Values.Contains(EngineSettings.Value))
+            //{
+            //    var doms = S.GET<MemoryDomainsForm>().lbMemoryDomains.Items;
+            //    bool hasValidDomain = false;
+            //    foreach (var dom in EngineSettings.Domains)
+            //    {
+            //        if (doms.Contains(dom))
+            //        {
+            //            hasValidDomain = true;
+            //            break;
+            //        }
+            //    }
+            //    return hasValidDomain;
+            //}
+            //else
+            //{
+            //    return false;
+            //}
         }
 
-        private void AddButton(ButtonDef buttonDef)
+        private void AddButton(MultiCorruptSettingsPack engineSettings)
         {
-            bool isValid = IsButtonValid(buttonDef);
+            bool isValid = engineSettings.Settings.Count > 0;
+            
+            for (int i = 0; i < engineSettings.Settings.Count; i++)
+            {
+                if (!IsEngineSettingValid(engineSettings.Settings[i]))
+                {
+                    isValid = false;
+                    break;
+                }
+            }
+
             bool hiddenAllowed = cbViewHidden.Checked;
 
             if (isValid || hiddenAllowed)
             {
-                Button b = new Button()
-                {
-                    Name = buttonDef.Name,
-                    Text = buttonDef.Name,
-                    Height = 50,
-                    Width = 150,
-                    BackColor = isValid ? pForm.cbSelectedEngine.BackColor : Color.DarkRed,
-                    ForeColor = Color.White,
-                    Font = new Font("Segoe UI", 8),
-                    UseVisualStyleBackColor = false,
-                    FlatStyle = FlatStyle.Flat,
-                    Tag = isValid ? "color:light1" : "color:dark1"
-                };
-                string lnC = buttonDef.Limiter;
-                string lnCv = buttonDef.Value;
-                long intensity = buttonDef.Intensity;
-
-                //If valid, add logic, else do not
-                if (isValid)
-                {
-                    b.Click += (o, e) =>
-                    {
-                        var cbE = S.GET<CorruptionEngineForm>().cbSelectedEngine;
-                        cbE.SelectedItem = "Vector Engine";
-                        RTCV.CorruptCore.RtcCore.SelectedEngine = CorruptionEngine.VECTOR;
-
-                        var cbL = S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorLimiterList;
-                        var cbV = S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorValueList;
-
-
-                        var cblItems = cbL.Items;
-                        var cbvItems = cbV.Items;
-                        foreach (var cblItem in cblItems)
-                        {
-                            if (((ComboBoxItem<string>)cblItem).Name == lnC)
-                            {
-                                foreach (var cbvItem in cbvItems)
-                                {
-                                    if (((ComboBoxItem<string>)cbvItem).Name == lnCv)
-                                    {
-                                    //Set domains
-                                    S.GET<MemoryDomainsForm>().SetMemoryDomainsSelectedDomains(GetValidDomains(buttonDef.Domains));
-
-                                        cbL.SelectedItem = cblItem;
-                                        VectorEngine.LimiterListHash = ((ComboBoxItem<string>)cblItem).Value;
-                                        cbV.SelectedItem = cbvItem;
-                                        VectorEngine.ValueListHash = ((ComboBoxItem<string>)cbvItem).Value;
-                                        if (!cbManualIntensity.Checked)
-                                        {
-                                            long finalIntensity = (long)((double)intensity * (rbSizeSmall.Checked ? 0.5 : rbSizeMedium.Checked ? 1 : 2));
-                                        //S.GET<RTC_GlitchHarvesterIntensity_Form>().multiTB_Intensity.Value = finalIntensity;
-                                        multiTB_Intensity.Value = finalIntensity;
-                                            RTCV.CorruptCore.RtcCore.Intensity = finalIntensity;
-                                        }
-                                        if (cbGH.Checked)
-                                        {
-                                            try
-                                            {
-                                                ((Button)o).Enabled = false;
-                                                S.GET<GlitchHarvesterBlastForm>().Corrupt(null, null);
-                                            //.btnCorrupt_MouseDown(null, null);
-                                            ((Button)o).Enabled = true;
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                ((Button)o).Enabled = true;
-                                                throw ex;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            try
-                                            {
-                                                ((Button)o).Enabled = false;
-                                                S.GET<CoreForm>().ManualBlast(null, null);// .btnManualBlast_MouseDown(null, null);
-                                            ((Button)o).Enabled = true;
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                ((Button)o).Enabled = true;
-                                                throw ex;
-                                            }
-                                        }
-                                        break;
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    };
-                }
-
-                ContextMenu cm = new ContextMenu();
-                cm.MenuItems.Add("Remove Button", new EventHandler((o, e) =>
-                {
-                    curSys.Buttons.Remove(buttonDef);
-                    gbButtons.Controls.Remove(b);
-                    Save();
-                }));
-                b.ContextMenu = cm;
-
+                EzBlastButtonControl b = new EzBlastButtonControl(engineSettings, isValid ? pForm.cbSelectedEngine.BackColor : Color.DarkRed);
+                b.Clicked += EzBlastButton_Click;
+                b.Deleted += EzBlastButton_Deleted;
+                b.Edit += EzBlastButton_Edit;
                 gbButtons.Controls.Add(b);
+               
             }
         }
 
+        private void EzBlastButton_Edit(EzBlastButtonControl ebb)
+        {
+            EZBlastButtonConfigForm buttonConfigForm = new EZBlastButtonConfigForm(ebb.Pack.Duplicate());
+
+            if (buttonConfigForm.ShowDialog() == DialogResult.OK)
+            {
+                gbButtons.Controls.Remove(addButton);
+
+                ebb.UpdatePack(buttonConfigForm.Pack);
+                Save();
+                RestoreAddButton();
+            }
+        }
+
+        private void EzBlastButton_Deleted(EzBlastButtonControl ebb)
+        {
+            curSys.Buttons.Remove(ebb.Pack);
+            gbButtons.Controls.Remove(ebb);
+            Save();
+        }
+
+        private void EzBlastButton_Click(EzBlastButtonControl ebb)
+        {
+
+            try
+            {
+                ebb.Enabled = false;
+
+                var cbE = S.GET<CorruptionEngineForm>().cbSelectedEngine;
+                cbE.SelectedIndex = C.NightmareEngineIndex;
+                cbE.SelectedIndex = PluginCore.EngineIndex;
+                LocalNetCoreRouter.Route(PluginRouting.Endpoints.EMU_SIDE, PluginRouting.Commands.UPDATE_SETTINGS, ebb.Pack, true);
+                if (this.cbGH.Checked)
+                {
+                    S.GET<GlitchHarvesterBlastForm>().Corrupt(null, null);
+                }
+                else
+                {
+                    LocalNetCoreRouter.Route(RTCV.NetCore.Endpoints.CorruptCore, RTCV.NetCore.Commands.Basic.ManualBlast, true);
+                }
+
+            }
+            finally
+            {
+                ebb.Enabled = true;
+            }
+
+           
+        }
 
         private void Populate()
         {
@@ -446,44 +420,134 @@ namespace EZBlastButtons.UI
                 Tag = "color:light1"
             };
 
-            b.Click += AddCurrentConfigAsButton;
+            ContextMenu c = new ContextMenu(new MenuItem[] { new MenuItem("Quick Add\r\n(Current Engine Settings)", QuickAdd) });
+            b.ContextMenu = c;
+
+
+            b.Click += CreateNewConfig;
             gbButtons.Controls.Add(b);
+            addButton = b;
+        }
+
+        private void QuickAdd(object sender, EventArgs e)
+        {
+            EngineSettings quickSetting;
+
+            switch (RtcCore.SelectedEngine)
+            {
+                case CorruptionEngine.NIGHTMARE:
+                    quickSetting = new EngineSettings(NightmareEngine.getDefaultPartial());
+                    break;
+                case CorruptionEngine.HELLGENIE:
+                    quickSetting = new EngineSettings(HellgenieEngine.getDefaultPartial());
+                    break;
+                case CorruptionEngine.DISTORTION:
+                    quickSetting = new EngineSettings(DistortionEngine.getDefaultPartial());
+                    break;
+                case CorruptionEngine.FREEZE:
+                    quickSetting = new EngineSettings(null);
+                    break;
+                case CorruptionEngine.PIPE:
+                    quickSetting = new EngineSettings(null);
+                    break;
+                case CorruptionEngine.VECTOR:
+                    quickSetting = new EngineSettings(VectorEngine.getDefaultPartial());
+                    break;
+                case CorruptionEngine.CLUSTER:
+                    quickSetting = new EngineSettings(ClusterEngine.getDefaultPartial());
+                    break;
+                default:
+                    MessageBox.Show("Cannot add unsupported engine type");
+                    return;
+            }
+
+            var buttonName = Prompt.ShowDialog("Choose Button Name", "EZ Button Name");
+            
+
+            if (string.IsNullOrWhiteSpace(buttonName))
+            {
+                return;
+            }
+
+            quickSetting.DisplayName = C.EngineString(RtcCore.SelectedEngine) + " (Quick Add)";
+            quickSetting.Extract(settingsControl);
+            string[] domainList = new List<string>(S.GET<MemoryDomainsForm>().lbMemoryDomains.SelectedItems.Cast<string>()).ToArray();
+            quickSetting.Domains = domainList;
+
+            quickSetting.ForcedIntensity = RtcCore.Intensity;
+            MultiCorruptSettingsPack pack = new MultiCorruptSettingsPack();
+            pack.AddSetting(quickSetting);
+            pack.Name = buttonName;
+
+            curSys.Buttons.Add(pack);
+            AddButton(pack);
+            Save();
+            RestoreAddButton();
+        }
+
+        private void RestoreAddButton()
+        {
+            if(addButton == null)
+            {
+                AddAddButton();
+            }
+            else
+            {
+                gbButtons.Controls.Add(addButton);
+
+            }
+            //addButton = b;
         }
 
 
-        private void AddCurrentConfigAsButton(object sender, EventArgs e)
+        private void CreateNewConfig(object sender, EventArgs e)
         {
-            string s = Prompt.ShowDialog("Name", "Enter Button Name");
-            if (!string.IsNullOrWhiteSpace(s))
+            EZBlastButtonConfigForm buttonConfigForm = new EZBlastButtonConfigForm();
+
+            if(buttonConfigForm.ShowDialog() == DialogResult.OK)
             {
-                string[] selectedDomains = (string[])AllSpec.UISpec[UISPEC.SELECTEDDOMAINS];
-                var selectedLim = ((ComboBoxItem<string>)S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorLimiterList.SelectedItem)?.Name.ToString();
-                var selectedVal = ((ComboBoxItem<string>)S.GET<CorruptionEngineForm>().VectorEngineControl.cbVectorValueList.SelectedItem)?.Name.ToString();
-                var intensity = RTCV.CorruptCore.RtcCore.Intensity;
-
-                ((Button)sender).Click -= AddCurrentConfigAsButton;
+                ((Button)sender).Click -= CreateNewConfig;
                 gbButtons.Controls.Remove((Control)sender);
-                var bdef = new ButtonDef() { Name = s, Limiter = selectedLim, Value = selectedVal, Intensity = intensity, Domains = selectedDomains };
-                curSys.Buttons.Add(bdef);
-                AddButton(bdef);//, s, selectedLim, selectedVal, intensity, selectedDomains);
+                curSys.Buttons.Add(buttonConfigForm.Pack);
+                AddButton(buttonConfigForm.Pack);
                 Save();
-                AddAddButton();
-
+                RestoreAddButton();
             }
+        }
+
+        ////Copied from TCPLink.cs line 235
+        private static CerasSerializer CreateSerializer()
+        {
+            var config = new SerializerConfig();
+            config.Advanced.PersistTypeCache = false;
+            config.Advanced.UseReinterpretFormatter = false; //While faster, leads to some weird bugs due to threading abuse
+            config.Advanced.RespectNonSerializedAttribute = false;
+            config.OnResolveFormatter.Add((c, t) =>
+            {
+                if (t == typeof(HashSet<byte[]>))
+                {
+                    return new HashSetFormatterThatKeepsItsComparer();
+                }
+                else if (t == typeof(HashSet<byte?[]>))
+                {
+                    return new NullableByteHashSetFormatterThatKeepsItsComparer();
+                }
+
+                return null; // continue searching
+            });
+            return new CerasSerializer(config);
         }
 
         private void Save()
         {
-            JsonSerializer serializer = new JsonSerializer();
-            serializer.NullValueHandling = NullValueHandling.Ignore;
-            serializer.Formatting = Formatting.Indented;
-
-            using (StreamWriter sw = new StreamWriter(PluginConfigPath))
+            try
             {
-                using (JsonWriter writer = new JsonTextWriter(sw))
-                {
-                    serializer.Serialize(writer, AllSets);
-                }
+                var bytes = saveSerializer.Serialize(AllSets);
+                File.WriteAllBytes(PluginConfigPath, bytes);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unable to save EzBlast Engine file: " + ex.Message);
             }
         }
 
@@ -525,7 +589,7 @@ namespace EZBlastButtons.UI
                     return;
                 }
 
-                AllSets.Systems.Add(s, new SystemDef() { Buttons = new List<ButtonDef>() });
+                AllSets.Systems.Add(s, new SystemDef() { Buttons = new List<MultiCorruptSettingsPack>() });
                 Save();
                 updating = true;
                 cbSelectedEngine.Items.Clear();
@@ -551,7 +615,7 @@ namespace EZBlastButtons.UI
                     Text = caption,
                     StartPosition = FormStartPosition.CenterScreen
                 };
-                Label textLabel = new Label() { Left = 50, Top = 20, Text = text };
+                Label textLabel = new Label() { Left = 50, Top = 20, Text = text, Width = 400 };
                 TextBox textBox = new TextBox() { Left = 50, Top = 50, Width = 400 };
                 Button confirmation = new Button() { Text = "OK", Left = 350, Width = 100, Top = 70, DialogResult = DialogResult.OK };
                 confirmation.Click += (sender, e) => { prompt.Close(); };
@@ -573,7 +637,7 @@ namespace EZBlastButtons.UI
                 AllSets.Systems.Remove(key);
                 if (AllSets.Systems.Count == 0)
                 {
-                    AllSets.Systems.Add("Default", new SystemDef() { Buttons = new List<ButtonDef>() });
+                    AllSets.Systems.Add("Default", new SystemDef() { Buttons = new List<MultiCorruptSettingsPack>() });
                 }
                 Save();
                 UpdateSetsComboBox();

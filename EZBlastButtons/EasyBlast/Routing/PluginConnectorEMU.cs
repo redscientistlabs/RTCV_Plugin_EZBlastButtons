@@ -1,3 +1,4 @@
+using EZBlastButtons.Structures;
 using EZBlastButtons.UI;
 using NLog;
 using RTCV.Common;
@@ -15,7 +16,7 @@ namespace EZBlastButtons
     {
         public PluginConnectorEMU()
         {
-            LocalNetCoreRouter.registerEndpoint(this, Endpoint.EMU_SIDE);
+            LocalNetCoreRouter.registerEndpoint(this, PluginRouting.Endpoints.EMU_SIDE);
         }
 
         public object OnMessageReceived(object sender, NetCoreEventArgs e)
@@ -24,6 +25,10 @@ namespace EZBlastButtons
 
             switch (message.Type)
             {
+                case PluginRouting.Commands.UPDATE_SETTINGS:
+                    //Logging.GlobalLogger.Info($"UPDATE_SETTINGS CONNECTOR====================================================");
+                    EZBlastButtonsEngineCore.SetSettings(message.objectValue as MultiCorruptSettingsPack);
+                    break;
                 default:
                     break;
             }

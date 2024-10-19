@@ -4,10 +4,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EZBlastButtons.Structures
+namespace EZBlastButtons
 {
-    public class SystemDef
+    internal class EmuSide
     {
-        public List<MultiCorruptSettingsPack> Buttons { get; set; }
+
+
+        void Apply()
+        {
+            C.CacheMasterSpec();
+
+
+
+        }
+
     }
 }

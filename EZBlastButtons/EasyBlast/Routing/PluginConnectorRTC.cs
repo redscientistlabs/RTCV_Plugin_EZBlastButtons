@@ -18,7 +18,7 @@ namespace EZBlastButtons
     {
         public PluginConnectorRTC()
         {
-            LocalNetCoreRouter.registerEndpoint(this, Endpoint.RTC_SIDE);
+            LocalNetCoreRouter.registerEndpoint(this, PluginRouting.Endpoints.RTC_SIDE);
         }
 
         public object OnMessageReceived(object sender, NetCoreEventArgs e)
@@ -26,7 +26,7 @@ namespace EZBlastButtons
             NetCoreAdvancedMessage message = e.message as NetCoreAdvancedMessage;
             switch (message.Type)
             {
-                case Commands.SHOW_WINDOW:
+                case PluginRouting.Commands.SHOW_WINDOW:
                     try
                     {
                         SyncObjectSingleton.FormExecute(() =>
@@ -43,9 +43,13 @@ namespace EZBlastButtons
                     }
                     catch
                     {
-                        Logging.GlobalLogger.Error($"Template command {Commands.SHOW_WINDOW} failed. Reason:\r\n" + e.ToString());
+                        Logging.GlobalLogger.Error($"Template command {PluginRouting.Commands.SHOW_WINDOW} failed. Reason:\r\n" + e.ToString());
                         break;
                     }
+                case PluginRouting.Commands.RESYNC_SETTINGS:
+                    //if (!S.ISNULL<EZBlastEngineForm>())
+                    //    S.GET<EZBlastEngineForm>().PushSettings();
+                    break;
                 default:
                     break;
             }

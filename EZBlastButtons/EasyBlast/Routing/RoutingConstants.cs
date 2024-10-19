@@ -1,20 +1,45 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace EZBlastButtons
 {
-    internal static class Endpoint
+
+    internal static class PluginRouting
     {
-        public const string PREFIX = "EZBLAST";
-        public const string EMU_SIDE = PREFIX + "EMU";
-        public const string RTC_SIDE = PREFIX + "RTC";
+        internal const string PREFIX = "EZBLAST";
+        internal static class Endpoints
+        {
+
+            public const string EMU_SIDE = PREFIX + "_" + "EMU";
+            public const string RTC_SIDE = PREFIX + "_" + "RTC";
+        }
+
+        /// <summary>
+        /// Add your commands here
+        /// </summary>
+        internal static class Commands
+        {
+            public const string CORRUPT = PREFIX + "_" + nameof(CORRUPT);
+            public const string UPDATE_SETTINGS = PREFIX + "_" + nameof(UPDATE_SETTINGS);
+            public const string RESYNC_SETTINGS = PREFIX + "_" + nameof(RESYNC_SETTINGS);
+            public const string SHOW_WINDOW = PREFIX + "_" + nameof(SHOW_WINDOW);
+        }
     }
 
-    internal static class Commands
-    {
-        public const string SHOW_WINDOW = Endpoint.PREFIX + nameof(SHOW_WINDOW);
-    }
+
+    //internal static class Endpoint
+    //{
+    //    public const string PREFIX = "EZBLAST";
+    //    public const string EMU_SIDE = PREFIX + "EMU";
+    //    public const string RTC_SIDE = PREFIX + "RTC";
+    //}
+
+    //internal static class Commands
+    //{
+    //    public const string SHOW_WINDOW = Endpoint.PREFIX + nameof(SHOW_WINDOW);
+    //}
 }

@@ -22,27 +22,40 @@ namespace EZBlastButtons
         public string Author => "NullShock78";
 
         public Version Version => Ver;
-        public static Version Ver => new Version(2, 0, 1);
-
+        public static Version Ver => new Version(3, 0, 0);
+        public static int EngineIndex { get; private set; }
         public RTCSide SupportedSide => RTCSide.Both;
-
+        internal static EZBlastEngineImplementation EngineImplementation { get; private set;}
         public void Dispose()
         {
         }
 
         public bool Start(RTCSide side)
         {
+            C.Init();
+
             Logging.GlobalLogger.Info($"{Name} v{Version} initializing.");
             if (side == RTCSide.Client)
             {
-
+                connectorEMU = new PluginConnectorEMU();
+                //LocalNetCoreRouter.Route(PluginRouting.Endpoints.RTC_SIDE, PluginRouting.Commands.RESYNC_SETTINGS, synced: true);
             }
             else if (side == RTCSide.Server)
             {
                 connectorRTC = new PluginConnectorRTC();
+
+                var form = new EZBlastEngineForm();
+                S.SET<EZBlastEngineForm>(form);
+                form.TopLevel = false;
+                EngineImplementation = new EZBlastEngineImplementation(form);
+
+                S.GET<CorruptionEngineForm>().RegisterPluginEngine(EngineImplementation);
+                EngineIndex = S.GET<CorruptionEngineForm>().cbSelectedEngine.Items.Count-1;
+
+                //
                 S.GET<OpenToolsForm>().RegisterTool("EZ Blast Buttons", "Open EZ Blast Buttons", () => { 
                     //This is the method you use to route commands between the RTC side and the Emulator side
-                    LocalNetCoreRouter.Route(Endpoint.RTC_SIDE, Commands.SHOW_WINDOW, true); 
+                    LocalNetCoreRouter.Route(PluginRouting.Endpoints.RTC_SIDE, PluginRouting.Commands.SHOW_WINDOW, true); 
                 });
             }
             Logging.GlobalLogger.Info($"{Name} v{Version} initialized.");
@@ -52,12 +65,18 @@ namespace EZBlastButtons
 
         public bool StopPlugin()
         {
+
             if (!S.ISNULL<PluginForm>() && !S.GET<PluginForm>().IsDisposed)
             {
                 SyncObjectSingleton.FormExecute(() =>
                 {
                     S.GET<PluginForm>().Close();
                 });
+            }
+
+            if (CurrentSide == RTCSide.Server && !S.ISNULL<EZBlastEngineForm>() && !S.GET<EZBlastEngineForm>().IsDisposed)
+            {
+                S.GET<EZBlastEngineForm>().Close();
             }
 
             return true;
