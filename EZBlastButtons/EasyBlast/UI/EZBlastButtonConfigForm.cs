@@ -47,24 +47,21 @@ namespace EZBlastButtons
         public EZBlastButtonConfigForm()
         {
             InitializeComponent();
+            C.Regather();
 
             ContextMenu menu = new ContextMenu(new MenuItem[]
             {
-                new MenuItem("Delete Selected", (o,e) =>
-                {
-                    if(lbEngines.SelectedItem != null)
-                    {
-                        var item = lbEngines.SelectedItem as EngineSettings;
-                        Pack.RemoveSetting(item);
-                        lbEngines.Items.Remove(item);
-                        //PushSettings();
-                        UpdateList();
-                    }
-                }),
                 new MenuItem("Edit Selected", (o,e) =>
                 {
                     if(lbEngines.SelectedItem != null)
                     {
+
+                        if (!C.IsEngineSupported(((EngineSettings)lbEngines.SelectedItem).EngineType))
+                        {
+                            MessageBox.Show("Unable to open selected engine setting for editing, open RTC with a non-stub emulator to edit this engine setting","Unable to Edit Engine Setting",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                            return;
+                        }
+
                         int multiEngineIndex = S.GET<CorruptionEngineForm>().cbSelectedEngine.SelectedIndex;
                         C.CacheMasterSpec();
                         gbMain.Enabled = false;
@@ -77,7 +74,6 @@ namespace EZBlastButtons
                             Pack.Settings.RemoveAt(idx);
                             Pack.Settings.Insert(idx, esf.OutputSettings);
                             UpdateList();
-                            //PushSettings();
                             S.GET<MemoryDomainsForm>().RefreshDomainsAndKeepSelected();
                         }
                         C.RestoreMasterSpec(true);
@@ -85,12 +81,20 @@ namespace EZBlastButtons
                         S.GET<CorruptionEngineForm>().cbSelectedEngine.SelectedIndex = multiEngineIndex;
                         gbMain.Enabled = true;
                     }
+                }),
+                new MenuItem("Delete Selected", (o,e) =>
+                {
+                    if(lbEngines.SelectedItem != null)
+                    {
+                        var item = lbEngines.SelectedItem as EngineSettings;
+                        Pack.RemoveSetting(item);
+                        lbEngines.Items.Remove(item);
+                        UpdateList();
+                    }
                 })
             });
             originalEngineForm = S.GET<CorruptionEngineForm>();
             lbEngines.ContextMenu = menu;
-
-            //FormClosing += MultiEngineForm_FormClosing;
         }
 
 
@@ -100,6 +104,10 @@ namespace EZBlastButtons
         {
             InitializeComponent();
 
+
+            C.Regather();
+
+
             _pack = editPack;
 
             ContextMenu menu = new ContextMenu(new MenuItem[]
@@ -108,6 +116,14 @@ namespace EZBlastButtons
                 {
                     if(lbEngines.SelectedItem != null)
                     {
+
+
+                        if (!C.IsEngineSupported(((EngineSettings)lbEngines.SelectedItem).EngineType))
+                        {
+                            MessageBox.Show("Unable to open selected engine setting for editing, open RTC with a non-stub emulator to edit this engine setting","Unable to Edit Engine Setting",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                            return;
+                        }
+
                         int multiEngineIndex = S.GET<CorruptionEngineForm>().cbSelectedEngine.SelectedIndex;
                         C.CacheMasterSpec();
                         gbMain.Enabled = false;
@@ -146,7 +162,6 @@ namespace EZBlastButtons
             bConfirm.Text = "Save Changes";
             tbName.Text = editPack.Name;
             UpdateList();
-            //FormClosing += MultiEngineForm_FormClosing;
         }
 
         private void bAdd_Click(object sender, EventArgs e)
@@ -166,7 +181,7 @@ namespace EZBlastButtons
             C.RestoreMasterSpec(true);
             //Resync UI
             S.GET<CorruptionEngineForm>().ResyncAllEngines();
-            //Set us back to multi engine
+            //Set us back to previous engine
             S.GET<CorruptionEngineForm>().cbSelectedEngine.SelectedIndex = cachedIndex;
             gbMain.Enabled = true;
         }
@@ -181,25 +196,6 @@ namespace EZBlastButtons
                 lbEngines.Items.Add(Pack.Settings[i]);
             }
             lbEngines.ResumeLayout();
-        }
-
-        private void bSave_Click(object sender, EventArgs e)
-        {
-            using (SaveFileDialog sfd = new SaveFileDialog() { Filter = "Multi Engine Files|*.men" })
-            {
-                if (sfd.ShowDialog() == DialogResult.OK)
-                {
-                    try
-                    {
-                        var bytes = saveSerializer.Serialize(Pack);
-                        File.WriteAllBytes(sfd.FileName, bytes);
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show("Unable to save Multi Engine file: " + ex.Message);
-                    }
-                }
-            }
         }
 
         ////Copied from TCPLink.cs line 235

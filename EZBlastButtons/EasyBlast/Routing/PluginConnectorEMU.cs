@@ -26,8 +26,10 @@ namespace EZBlastButtons
             switch (message.Type)
             {
                 case PluginRouting.Commands.UPDATE_SETTINGS:
-                    //Logging.GlobalLogger.Info($"UPDATE_SETTINGS CONNECTOR====================================================");
                     EZBlastButtonsEngineCore.SetSettings(message.objectValue as MultiCorruptSettingsPack);
+                    break;
+                case PluginRouting.Commands.UPDATE_SHARED_SETTINGS:
+                    EZBlastButtonsEngineCore.SetSharedSettings((EZBlastSharedSettings)message.objectValue);
                     break;
                 default:
                     break;

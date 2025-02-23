@@ -15,7 +15,6 @@ namespace EZBlastButtons.Structures
         public string Name { get; private set; }
         [JsonProperty(TypeNameHandling = TypeNameHandling.Auto)]
         List<SpecKVP> cachedSpec = new List<SpecKVP>();
-        //Dictionary<string,object> cachedSpec = new Dictionary<string,object>();
 
         public SaveableEngineSettings() { }
         public SaveableEngineSettings(PartialSpec otherSpec)
@@ -30,7 +29,6 @@ namespace EZBlastButtons.Structures
             foreach (var key in keys)
             {
                 cachedSpec.Add(new SpecKVP(key, otherSpec.Get<object>(key)));
-                //cachedSpec[key] = otherSpec.Get<object>(key);
             }
         }
 

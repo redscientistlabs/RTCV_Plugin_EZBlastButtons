@@ -22,8 +22,8 @@ namespace EZBlastButtons
         public string Author => "NullShock78";
 
         public Version Version => Ver;
-        public static Version Ver => new Version(3, 0, 0);
-        public static int EngineIndex { get; private set; }
+        public static Version Ver => new Version(3, 1, 0);
+        //public static int EngineIndex { get; private set; }
         public RTCSide SupportedSide => RTCSide.Both;
         internal static EZBlastEngineImplementation EngineImplementation { get; private set;}
         public void Dispose()
@@ -38,7 +38,6 @@ namespace EZBlastButtons
             if (side == RTCSide.Client)
             {
                 connectorEMU = new PluginConnectorEMU();
-                //LocalNetCoreRouter.Route(PluginRouting.Endpoints.RTC_SIDE, PluginRouting.Commands.RESYNC_SETTINGS, synced: true);
             }
             else if (side == RTCSide.Server)
             {
@@ -50,11 +49,8 @@ namespace EZBlastButtons
                 EngineImplementation = new EZBlastEngineImplementation(form);
 
                 S.GET<CorruptionEngineForm>().RegisterPluginEngine(EngineImplementation);
-                EngineIndex = S.GET<CorruptionEngineForm>().cbSelectedEngine.Items.Count-1;
 
-                //
                 S.GET<OpenToolsForm>().RegisterTool("EZ Blast Buttons", "Open EZ Blast Buttons", () => { 
-                    //This is the method you use to route commands between the RTC side and the Emulator side
                     LocalNetCoreRouter.Route(PluginRouting.Endpoints.RTC_SIDE, PluginRouting.Commands.SHOW_WINDOW, true); 
                 });
             }

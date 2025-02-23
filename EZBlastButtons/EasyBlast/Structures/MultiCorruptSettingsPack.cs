@@ -4,24 +4,31 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Ceras;
+using Newtonsoft.Json;
 
 namespace EZBlastButtons.Structures
 {
+    //AKA a button, rename
     [Serializable]
     [Ceras.MemberConfig(TargetMember.All)]
     public class MultiCorruptSettingsPack
     {
+        [JsonProperty]
         public string Name { get; set; } = "Unnamed";
+        [JsonProperty]
+        public List<EngineSettings> Settings { get; private set; } = new List<EngineSettings>();
 
-        public List<EngineSettings> Settings { get; private set; }
-        private static Random rand = new Random();
-        public long OverrideIntensity { get; set; } = -1;
+
+        //[JsonProperty]
+        //public string EmulatorCore { get; set; } = "";
+        //[JsonProperty]
+        //public bool UseAnyCore { get; set; } = true;
+
+
+
         public MultiCorruptSettingsPack()
         {
-            Settings = new List<EngineSettings>();
         }
-
-
 
         public MultiCorruptSettingsPack Duplicate()
         {
@@ -31,7 +38,6 @@ namespace EZBlastButtons.Structures
                 p.Settings.Add(Settings[i].Duplicate());
             }
             p.Name = Name;
-            p.OverrideIntensity = OverrideIntensity;
             return p;
         }
 
@@ -43,7 +49,6 @@ namespace EZBlastButtons.Structures
                 Settings.Add(p.Settings[i].Duplicate());
             }
             Name = p.Name;
-            OverrideIntensity = p.OverrideIntensity;
         }
 
         public void AddSetting(EngineSettings setting)
@@ -55,11 +60,6 @@ namespace EZBlastButtons.Structures
             Settings.Remove(setting);
         }
 
-        public EngineSettings GetRandomSettings()
-        {
-            if (Settings.Count == 0) return null;
-            else return Settings[rand.Next(Settings.Count)];
-        }
     }
 
 }

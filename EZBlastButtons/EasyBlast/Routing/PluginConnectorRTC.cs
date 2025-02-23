@@ -46,10 +46,6 @@ namespace EZBlastButtons
                         Logging.GlobalLogger.Error($"Template command {PluginRouting.Commands.SHOW_WINDOW} failed. Reason:\r\n" + e.ToString());
                         break;
                     }
-                case PluginRouting.Commands.RESYNC_SETTINGS:
-                    //if (!S.ISNULL<EZBlastEngineForm>())
-                    //    S.GET<EZBlastEngineForm>().PushSettings();
-                    break;
                 default:
                     break;
             }

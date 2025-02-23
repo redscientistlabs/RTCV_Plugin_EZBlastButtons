@@ -14,51 +14,7 @@ namespace EZBlastButtons
 {
     static class EZBlastButtonsEngineCore
     {
-        //static EngineSettings settings = null;
-        //static bool first = false;
-
-
-        //public static void SetSettings(EngineSettings setting)
-        //{
-        //    settings = setting;
-        //}
-
-        //public static BlastLayer Corrupt()
-        //{
-
-        //    List<BlastUnit> bus = new List<BlastUnit>();
-        //    if (settings == null) return null;
-
-
-        //    settings.ApplyPartial();
-        //    long intensity = (OverrideIntensity > 0) ? OverrideIntensity : RtcCore.Intensity;
-        //    int precision = settings.Precision;
-        //    int alignment = settings.Alignment;
-        //    long settingIntensity = settings.ForcedIntensity > 0 ? settings.ForcedIntensity : (long)(settings.Percentage * intensity);
-
-        //    //Get domains in setting that exist, if none, use the selected ones from rtc
-        //    var validDoms = (settings.Domains != null && settings.Domains.Length > 0) ? GetValidDomains(settings.Domains) : null;
-        //    string[] domains = validDoms != null ? validDoms : (string[])AllSpec.UISpec["SELECTEDDOMAINS"];
-        //    //No valid domains, skip
-        //    if (domains == null || domains.Length == 0) return null;// new BlastLayer(bus);
-
-        //    for (int i = 0; i < settingIntensity; i++)
-        //    {
-        //        string domain = domains[RtcCore.RND.Next(domains.Length)];
-        //        MemoryInterface mi = MemoryDomains.GetInterface(domain);
-        //        bus.AddRange(settings.GetBlastUnits(domain, RtcCore.RND.NextLong(0, mi.Size - (precision * 2)), precision, alignment));
-        //    }
-
-        //    var bl = new BlastLayer(bus.Where(x => x != null).ToList());
-        //    if(bl.Layer.Count > 0)
-        //    {
-        //        return bl;
-        //    }
-        //    else
-        //    {
-        //        return null;
-        //    }
-        //}
+        static EZBlastSharedSettings sharedSettings;
 
         static MultiCorruptSettingsPack pack = null;
         public static long OverrideIntensity { get; internal set; } = 0;
@@ -67,6 +23,11 @@ namespace EZBlastButtons
         {
             pack = settingPack;
         }
+        public static void SetSharedSettings(EZBlastSharedSettings settings)
+        {
+            sharedSettings = settings;
+        }
+
 
         public static BlastLayer Corrupt()
         {
@@ -76,11 +37,16 @@ namespace EZBlastButtons
             List<BlastUnit> bus = new List<BlastUnit>();
             if (pack == null) return new BlastLayer(bus);
 
-            long intensity = (pack.OverrideIntensity > 0) ? pack.OverrideIntensity : RtcCore.Intensity;
+            long intensity = sharedSettings.Intensity;// (pack.OverrideIntensity > 0) ? pack.OverrideIntensity : RtcCore.Intensity;
             for (int settingInd = 0; settingInd < pack.Settings.Count; settingInd++)
             {
                 var setting = pack.Settings[settingInd];
                 setting.ApplyPartial();
+                //if(setting.EngineType == CorruptionEngine.CUSTOM)
+                //{
+                //    CustomEngine.
+                //}
+
                 int precision = setting.Precision;
                 int alignment = setting.Alignment;
 
@@ -90,18 +56,19 @@ namespace EZBlastButtons
                 //Get domains in setting that exist, if none, use the selected ones from rtc
                 var validDoms = (setting.Domains != null && setting.Domains.Length > 0) ? GetValidDomains(setting.Domains) : null;
                 string[] domains = validDoms != null ? validDoms : (string[])AllSpec.UISpec["SELECTEDDOMAINS"];
+
                 //No valid domains, skip
                 if (domains == null || domains.Length == 0) continue;
 
+                bool useAlignment = (bool)AllSpec.CorruptCoreSpec[RTCSPEC.CORE_USEALIGNMENT];
                 for (int i = 0; i < settingIntensity; i++)
                 {
                     string domain = domains[RtcCore.RND.Next(domains.Length)];
                     MemoryInterface mi = MemoryDomains.GetInterface(domain);
-                    //TODO: switch on engine name
-                    bus.AddRange(setting.GetBlastUnits(domain, RtcCore.RND.NextLong(0, mi.Size - (precision * 2)), precision, alignment));
+                    bus.AddRange(setting.GetBlastUnits(domain, RtcCore.RND.NextLong(0, mi.Size - (precision * 2)), precision, alignment, useAlignment));
                 }
             }
-            //Cache before our changes
+            //Restore spec without pushing
             C.RestoreMasterSpec(false);
 
             return new BlastLayer(bus.Where(x => x != null).ToList());

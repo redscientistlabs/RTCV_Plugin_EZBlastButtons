@@ -32,7 +32,6 @@ namespace EZBlastButtons
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EZBlastButtonConfigForm));
             this.bAdd = new System.Windows.Forms.Button();
             this.lbEngines = new System.Windows.Forms.ListBox();
-            this.bSave = new System.Windows.Forms.Button();
             this.bLoad = new System.Windows.Forms.Button();
             this.bUp = new System.Windows.Forms.Button();
             this.bDown = new System.Windows.Forms.Button();
@@ -80,26 +79,6 @@ namespace EZBlastButtons
             this.lbEngines.TabIndex = 160;
             this.lbEngines.Tag = "color:dark2";
             // 
-            // bSave
-            // 
-            this.bSave.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.bSave.BackColor = System.Drawing.Color.Gray;
-            this.bSave.Enabled = false;
-            this.bSave.FlatAppearance.BorderSize = 0;
-            this.bSave.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.bSave.Font = new System.Drawing.Font("Segoe UI", 8F);
-            this.bSave.ForeColor = System.Drawing.Color.White;
-            this.bSave.Location = new System.Drawing.Point(193, 160);
-            this.bSave.Name = "bSave";
-            this.bSave.Size = new System.Drawing.Size(58, 35);
-            this.bSave.TabIndex = 163;
-            this.bSave.TabStop = false;
-            this.bSave.Tag = "color:light1";
-            this.bSave.Text = "Save";
-            this.bSave.UseVisualStyleBackColor = false;
-            this.bSave.Visible = false;
-            this.bSave.Click += new System.EventHandler(this.bSave_Click);
-            // 
             // bLoad
             // 
             this.bLoad.BackColor = System.Drawing.Color.Gray;
@@ -113,7 +92,7 @@ namespace EZBlastButtons
             this.bLoad.TabIndex = 164;
             this.bLoad.TabStop = false;
             this.bLoad.Tag = "color:light1";
-            this.bLoad.Text = "Load MultiEngine File";
+            this.bLoad.Text = "Import MultiEngine File";
             this.bLoad.UseVisualStyleBackColor = false;
             this.bLoad.Visible = false;
             this.bLoad.Click += new System.EventHandler(this.bLoad_Click);
@@ -261,7 +240,6 @@ namespace EZBlastButtons
             this.Controls.Add(this.bCancel);
             this.Controls.Add(this.bConfirm);
             this.Controls.Add(this.gbMain);
-            this.Controls.Add(this.bSave);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
@@ -283,7 +261,6 @@ namespace EZBlastButtons
         #endregion
         private System.Windows.Forms.Button bAdd;
         private System.Windows.Forms.ListBox lbEngines;
-        private System.Windows.Forms.Button bSave;
         private System.Windows.Forms.Button bLoad;
         private System.Windows.Forms.Button bUp;
         private System.Windows.Forms.Button bDown;

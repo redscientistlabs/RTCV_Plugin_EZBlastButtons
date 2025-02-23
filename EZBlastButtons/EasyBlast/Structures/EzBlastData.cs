@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,8 +7,9 @@ using System.Threading.Tasks;
 
 namespace EZBlastButtons.Structures
 {
-    public class SystemDef
+    //For json
+    public class EzBlastData
     {
-        public List<MultiCorruptSettingsPack> Buttons { get; set; }
+        public Dictionary<string, ButtonSet> Sets { get; set; }
     }
 }

@@ -12,16 +12,6 @@ namespace EZBlastButtons
 {
     internal static class C
     {
-
-        //Cannot guarantee the index that these will be in, so we assign them
-        public static int ClusterEngineIndex { get; private set; } = 0;
-        public static int DistortionEngineIndex { get; private set; } = 1;
-        public static int FreezeEngineIndex { get; private set; } = 2;
-        public static int HellgenieEngineIndex { get; private set; } = 3;
-        public static int NightmareEngineIndex { get; private set; } = 4;
-        public static int PipeEngineIndex { get; private set; } = 5;
-        public static int VectorEngineIndex { get; private set; } = 6;
-
         public const string ClusterEngineStr = "Cluster Engine";
         public const string DistortionEngineStr = "Distortion Engine";
         public const string FreezeEngineStr = "Freeze Engine";
@@ -29,6 +19,9 @@ namespace EZBlastButtons
         public const string NightmareEngineStr = "Nightmare Engine";
         public const string PipeEngineStr = "Pipe Engine";
         public const string VectorEngineStr = "Vector Engine";
+        public const string CustomEngineStr = "Custom Engine";
+
+        public const string EZBlastEngineStr = "EZBlast Engine";
 
         public const string TARGET_SPEC_NAME = "RTCSpec";
 
@@ -36,133 +29,133 @@ namespace EZBlastButtons
 
         private static HashSet<int> supportedEngineIndices = new HashSet<int>();
         static bool initialized = false;
+
+        static List<int> indices = new List<int>();
+        static List<string> engineComboboxIndicesList = new List<string>();
+
+        static List<EngineSupportInfo> EngineSupportInfos = new List<EngineSupportInfo>();
+
+
+        public static int EZBlastEngineIndex = -1;
+
         public static CorruptionEngine EngineFromName(string engineName)
         {
+
             if (string.IsNullOrWhiteSpace(engineName)) return CorruptionEngine.NONE;
 
-            switch (engineName)
+            foreach (var esi in EngineSupportInfos)
             {
-                case NightmareEngineStr:
-                    return CorruptionEngine.NIGHTMARE;
-                case HellgenieEngineStr:
-                    return CorruptionEngine.HELLGENIE;
-                case DistortionEngineStr:
-                    return CorruptionEngine.DISTORTION;
-                case FreezeEngineStr:
-                    return CorruptionEngine.FREEZE;
-                case PipeEngineStr:
-                    return CorruptionEngine.PIPE;
-                case VectorEngineStr:
-                    return CorruptionEngine.VECTOR;
-                case ClusterEngineStr:
-                    return CorruptionEngine.CLUSTER;
-                default:
-                    return CorruptionEngine.NONE;
+                if (esi.EngineName == engineName)
+                {
+                    return esi.CorruptionEngineType;
+                }
             }
+            return CorruptionEngine.NONE;
         }
 
         public static int EngineToIndex(CorruptionEngine engine)
         {
-            switch (engine)
+
+            foreach (var esi in EngineSupportInfos)
             {
-                case CorruptionEngine.NIGHTMARE:
-                    return NightmareEngineIndex;
-                case CorruptionEngine.HELLGENIE:
-                    return HellgenieEngineIndex;
-                case CorruptionEngine.DISTORTION:
-                    return DistortionEngineIndex;
-                case CorruptionEngine.FREEZE:
-                    return FreezeEngineIndex;
-                case CorruptionEngine.PIPE:
-                    return PipeEngineIndex;
-                case CorruptionEngine.VECTOR:
-                    return VectorEngineIndex;
-                case CorruptionEngine.CLUSTER:
-                    return ClusterEngineIndex;
-                default:
-                    return 0;
+                if (esi.CorruptionEngineType == engine)
+                {
+                    return esi.ComboBoxIndex;
+                }
             }
+
+            return -1;
         }
 
-
+        public static bool IsEngineSupported(CorruptionEngine engine)
+        {
+            foreach (var esi in EngineSupportInfos)
+            {
+                if(esi.CorruptionEngineType == engine)
+                {
+                    return esi.Supported;
+                }
+            }
+            return false;
+        }
 
         public static CorruptionEngine IndexToEngine(int index)
         {
-            if (index == NightmareEngineIndex) return CorruptionEngine.NIGHTMARE;
-            else if (index == HellgenieEngineIndex) return CorruptionEngine.HELLGENIE;
-            else if (index == DistortionEngineIndex) return CorruptionEngine.DISTORTION;
-            else if (index == FreezeEngineIndex) return CorruptionEngine.FREEZE;
-            else if (index == PipeEngineIndex) return CorruptionEngine.PIPE;
-            else if (index == VectorEngineIndex) return CorruptionEngine.VECTOR;
-            else if (index == ClusterEngineIndex) return CorruptionEngine.CLUSTER;
-            else return CorruptionEngine.NONE;
+            foreach (var esi in EngineSupportInfos)
+            {
+                if(esi.ComboBoxIndex == index)
+                {
+                    return esi.CorruptionEngineType;
+                }
+            }
+            return CorruptionEngine.NONE;
         }
 
 
-        public static bool IsEngineSupported(int index)
-        {
-            return supportedEngineIndices.Contains(index);
-        }
+        
 
-        public static void Init()
+
+        internal static void Regather()
         {
+
             InitMasterSpec();
+            supportedEngineIndices.Clear();
 
-            //var cefI = S.GET<CorruptionEngineForm>().cbSelectedEngine.Items.Cast<object>().Where(x => x is ComboBoxItem<string>).ToList();
-
-
-            //Indices length will always match cefI
-            List<int> indices = new List<int>();
+           
             int index = 0;
-            var cefI = S.GET<CorruptionEngineForm>().cbSelectedEngine.Items.Cast<object>().Where(x => {
+            engineComboboxIndicesList = S.GET<CorruptionEngineForm>().cbSelectedEngine.Items.Cast<object>().Where(x => {
                 bool isStr = x is string;
                 if (isStr) indices.Add(index);
                 index = index + 1;
                 return isStr;
             }).Cast<string>().ToList();
 
-            int Find(string toFind)
+            for (int i = 0; i < EngineSupportInfos.Count; i++)
             {
-                for (int i = 0; i < cefI.Count; i++)
-                {
-                    if (cefI[i] == toFind)
-                    {
-                        supportedEngineIndices.Add(indices[i]);
-                        return indices[i];
-                    }
-                }
-                //If not found
-                return 0;
+                EngineSupportInfos[i].ComboBoxIndex = engineComboboxIndicesList.FindIndex(x => x == EngineSupportInfos[i].EngineName);
             }
 
-            ClusterEngineIndex = Find(ClusterEngineStr);
-            DistortionEngineIndex = Find(DistortionEngineStr);
-            FreezeEngineIndex = Find(FreezeEngineStr);
-            HellgenieEngineIndex = Find(HellgenieEngineStr);
-            NightmareEngineIndex = Find(NightmareEngineStr);
-            PipeEngineIndex = Find(PipeEngineStr);
-            VectorEngineIndex = Find(VectorEngineStr);
+            var allItems = S.GET<CorruptionEngineForm>().cbSelectedEngine.Items.Cast<object>().ToList();
+            EZBlastEngineIndex = allItems.FindIndex(x => x.ToString().Contains(EZBlastEngineStr));
 
-            //ClusterEngineStr
-            //DistortionEngineStr
-            //FreezeEngineStr
-            //HellgenieEngineStr
-            //NightmareEngineStr
-            //PipeEngineStr
-            //VectorEngineStr
+        }
+
+        public static void Init()
+        {
+            EngineSupportInfos = new List<EngineSupportInfo>
+            {
+                new EngineSupportInfo(VectorEngineStr, VectorEngine.getDefaultPartial, CorruptionEngine.VECTOR),
+                new EngineSupportInfo(NightmareEngineStr, NightmareEngine.getDefaultPartial, CorruptionEngine.NIGHTMARE),
+                //new EngineSupportInfo(HellgenieEngineStr, HellgenieEngine.getDefaultPartial, CorruptionEngine.HELLGENIE),
+                new EngineSupportInfo(FreezeEngineStr, null, CorruptionEngine.FREEZE),
+                new EngineSupportInfo(PipeEngineStr, null, CorruptionEngine.PIPE),
+                new EngineSupportInfo(DistortionEngineStr, DistortionEngine.getDefaultPartial, CorruptionEngine.DISTORTION),
+                new EngineSupportInfo(ClusterEngineStr, ClusterEngine.getDefaultPartial, CorruptionEngine.CLUSTER),
+                new EngineSupportInfo(CustomEngineStr, CustomEngine.getCurrentConfigSpec, CorruptionEngine.CUSTOM)
+            };
+
+            InitMasterSpec();
+            Regather();
         }
 
         static void InitMasterSpec()
         {
             masterSpec = new PartialSpec(C.TARGET_SPEC_NAME);
             //masterSpec[RTCSPEC.CORE_INTENSITY] = RtcCore.Intensity;
-            masterSpec[RTCSPEC.CORE_CURRENTALIGNMENT] = RtcCore.Alignment;
             masterSpec[RTCSPEC.CORE_CURRENTPRECISION] = RtcCore.CurrentPrecision;
-            masterSpec.Insert(RTCV.CorruptCore.NightmareEngine.getDefaultPartial());
-            masterSpec.Insert(RTCV.CorruptCore.HellgenieEngine.getDefaultPartial());
-            masterSpec.Insert(RTCV.CorruptCore.DistortionEngine.getDefaultPartial());
-            masterSpec.Insert(RTCV.CorruptCore.VectorEngine.getDefaultPartial());
-            masterSpec.Insert(RTCV.CorruptCore.ClusterEngine.getDefaultPartial());
+            masterSpec[RTCSPEC.CORE_CURRENTALIGNMENT] = RtcCore.Alignment;
+            masterSpec[RTCSPEC.CORE_USEALIGNMENT] = RtcCore.UseAlignment;
+            masterSpec[RTCSPEC.CORE_CREATEINFINITEUNITS] = RtcCore.CreateInfiniteUnits;
+
+            var ct = supportedEngineIndices.Count;
+            for (int i = 0; i < ct; i++)
+            {
+                if (EngineSupportInfos[i].DefaultPartialFunc != null)
+                {
+                    masterSpec.Insert(EngineSupportInfos[i].DefaultPartialFunc.Invoke());
+                }
+            }
+
             initialized = true;
         }
 
@@ -172,8 +165,8 @@ namespace EZBlastButtons
             {
                 case CorruptionEngine.NIGHTMARE:
                     return NightmareEngineStr;
-                case CorruptionEngine.HELLGENIE:
-                    return HellgenieEngineStr;
+                //case CorruptionEngine.HELLGENIE:
+                //    return HellgenieEngineStr;
                 case CorruptionEngine.DISTORTION:
                     return DistortionEngineStr;
                 case CorruptionEngine.FREEZE:
@@ -184,6 +177,8 @@ namespace EZBlastButtons
                     return VectorEngineStr;
                 case CorruptionEngine.CLUSTER:
                     return ClusterEngineStr;
+                case CorruptionEngine.CUSTOM:
+                    return CustomEngineStr;
                 default:
                     return "UNSUPPORTED";
             }
@@ -200,10 +195,7 @@ namespace EZBlastButtons
             if (!initialized) InitMasterSpec();
             AllSpec.CorruptCoreSpec.Update(masterSpec, push, push);
         }
-
-
-
-
+        //???
         public static int PrecisionToIndex(int precision)
         {
 

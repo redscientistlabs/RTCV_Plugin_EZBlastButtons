@@ -31,8 +31,8 @@ namespace EZBlastButtons
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(EZBlastEngineForm));
             this.gbMain = new System.Windows.Forms.GroupBox();
-            this.label14 = new System.Windows.Forms.Label();
             this.bOpenPlugin = new System.Windows.Forms.Button();
+            this.label14 = new System.Windows.Forms.Label();
             this.gbMain.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -46,17 +46,6 @@ namespace EZBlastButtons
             this.gbMain.TabIndex = 167;
             this.gbMain.TabStop = false;
             // 
-            // label14
-            // 
-            this.label14.AutoSize = true;
-            this.label14.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Italic);
-            this.label14.ForeColor = System.Drawing.Color.White;
-            this.label14.Location = new System.Drawing.Point(322, 12);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(82, 13);
-            this.label14.TabIndex = 167;
-            this.label14.Text = "Emmanuel Blast";
-            // 
             // bOpenPlugin
             // 
             this.bOpenPlugin.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -67,14 +56,26 @@ namespace EZBlastButtons
             this.bOpenPlugin.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.bOpenPlugin.Font = new System.Drawing.Font("Segoe UI", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.bOpenPlugin.ForeColor = System.Drawing.Color.White;
-            this.bOpenPlugin.Location = new System.Drawing.Point(12, 28);
+            this.bOpenPlugin.Location = new System.Drawing.Point(12, 37);
             this.bOpenPlugin.Name = "bOpenPlugin";
-            this.bOpenPlugin.Size = new System.Drawing.Size(396, 108);
+            this.bOpenPlugin.Size = new System.Drawing.Size(396, 99);
             this.bOpenPlugin.TabIndex = 168;
             this.bOpenPlugin.TabStop = false;
             this.bOpenPlugin.Tag = "color:light1";
             this.bOpenPlugin.Text = "Open Ez Blast Buttons";
             this.bOpenPlugin.UseVisualStyleBackColor = false;
+            this.bOpenPlugin.Click += new System.EventHandler(this.bOpenPlugin_Click);
+            // 
+            // label14
+            // 
+            this.label14.AutoSize = true;
+            this.label14.Font = new System.Drawing.Font("Segoe UI", 8.25F, System.Drawing.FontStyle.Italic);
+            this.label14.ForeColor = System.Drawing.Color.White;
+            this.label14.Location = new System.Drawing.Point(322, 15);
+            this.label14.Name = "label14";
+            this.label14.Size = new System.Drawing.Size(82, 13);
+            this.label14.TabIndex = 167;
+            this.label14.Text = "Emmanuel Blast";
             // 
             // EZBlastEngineForm
             // 

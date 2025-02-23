@@ -1,4 +1,5 @@
 ﻿using EZBlastButtons.Structures;
+using RTCV.CorruptCore;
 using RTCV.NetCore;
 using RTCV.UI;
 using System;
@@ -41,6 +42,16 @@ namespace EZBlastButtons.UI
                 Deleted?.Invoke(this);
                 Pack = null;
             }));
+
+
+            imgWarning.Image = System.Drawing.SystemIcons.Warning.ToBitmap();
+            ToolTip warningToolTip = new ToolTip();
+            warningToolTip.ToolTipIcon = ToolTipIcon.Warning;
+            warningToolTip.ToolTipTitle = "Missing Engines or Domains";
+            warningToolTip.SetToolTip(imgWarning, "Button contains settings that are not valid, may not produce blast units");
+            warningToolTip.AutoPopDelay = 1200000;
+            ValidateEngines();
+            
             //curSys.Buttons.Remove(EngineSettings);
             //gbButtons.Controls.Remove(b);
             //Save();
@@ -60,5 +71,20 @@ namespace EZBlastButtons.UI
         {
             Clicked?.Invoke(this);
         }
+
+        public void ValidateEngines()
+        {
+            var ok = Pack.Settings.All(x => x.Validate());
+            if (ok)
+            {
+                imgWarning.Visible = false;
+            }
+            else
+            {
+                imgWarning.Visible = true;
+            }
+        }
+
+
     }
 }

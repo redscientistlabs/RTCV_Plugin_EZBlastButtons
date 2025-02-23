@@ -25,11 +25,13 @@ namespace EZBlastButtons.UI
 {
     public partial class PluginForm : ComponentForm, IColorize
     {
-        SystemDef curSys = null;
-        SysDefHolder AllSets = null;
+        ButtonSet curButtonSet = null;
+        EzBlastData AllSets = null;
 
         public static string PluginFolderPath = Path.Combine(RTCV.CorruptCore.RtcCore.PluginDir,nameof(EZBlastButtons));
-        public static string PluginConfigPath = Path.Combine(PluginFolderPath, "EZBlastButtons.json");
+        public static string PluginConfigPath = Path.Combine(PluginFolderPath, "EZBlastButtons.ezb");
+        public static string CustomEngineTempPath = Path.Combine(PluginFolderPath, "TEMP_EZBLAST_CustomEngine.cet");
+        public static string CustomEngineCachePath = Path.Combine(PluginFolderPath, "TEMP_Cached_CustomEngine.cet");
 
         public static PluginForm pForm;
         string prevDoms = "";
@@ -39,58 +41,58 @@ namespace EZBlastButtons.UI
 
         HashSet<string> validDomains = new HashSet<string>();
         CorruptionEngineForm settingsControl;
+        ContextMenu addButtonContextMenu = null;
         public PluginForm()
         {
             InitializeComponent();
             saveSerializer = CreateSerializer();
+            C.Regather();//Ensure our engine info is ok
 
             settingsControl = S.GET<CorruptionEngineForm>();
-            settingsControl.cbSelectedEngine.SelectedIndex = C.NightmareEngineIndex;
+            settingsControl.cbSelectedEngine.SelectedIndex = 0;
             settingsControl.cbSelectedEngine.SelectedIndexChanged += CbSelectedEngine_SelectedIndexChanged;
 
             //cbSelectedEngine.Items.Add(new { Text = engine.ToString(), Value = engine });
             
             pForm = this;
-            //Bind up multitb
             multiTB_Intensity.ValueChanged += (sender, args) => RTCV.CorruptCore.RtcCore.Intensity = multiTB_Intensity.Value;
             multiTB_Intensity.registerSlave(S.GET<GeneralParametersForm>().multiTB_Intensity);
 
             ContextMenu cm = new ContextMenu();
-            cm.MenuItems.Add("Import...", new EventHandler((o, e) => {
-                try
-                {
-                    using (OpenFileDialog ofd = new OpenFileDialog() { Filter = "*.json|*.json" })
-                    {
-                        if (ofd.ShowDialog() == DialogResult.OK)
-                        {
-                            Import(ofd.FileName);
-                        }
-                    }
-                    
-                }
-                catch(JsonSerializationException ex)
-                {
-                    MessageBox.Show("ERROR: Import deserialization error", ex.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
-            }));
+            //cm.MenuItems.Add("Import...", new EventHandler((o, e) => {
+            //    try
+            //    {
+            //        using (OpenFileDialog ofd = new OpenFileDialog() { Filter = "*.json|*.json" })
+            //        {
+            //            if (ofd.ShowDialog() == DialogResult.OK)
+            //            {
+            //                Import(ofd.FileName);
+            //            }
+            //        }
+            //    }
+            //    catch(JsonSerializationException ex)
+            //    {
+            //        MessageBox.Show("ERROR: Import deserialization error", ex.ToString(), MessageBoxButtons.OK, MessageBoxIcon.Error);
+            //    }
+            //}));
 
             cm.MenuItems.Add("Rename", new EventHandler((o, e) => {
 
                 string newName = Prompt.ShowDialog("Name", "Enter New Set Name");
                 if (!string.IsNullOrWhiteSpace(newName))
                 {
-                    if (AllSets.Systems.ContainsKey(newName))
+                    if (AllSets.Sets.ContainsKey(newName))
                     {
                         MessageBox.Show("Set name already exists", "Set name already exists", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
 
-                    string key = cbSelectedEngine.SelectedItem.ToString();
-                    var set = AllSets.Systems[key];
-                    AllSets.Systems.Remove(key);
-                    AllSets.Systems[newName] = set;
+                    string key = cbSelectedSet.SelectedItem.ToString();
+                    var set = AllSets.Sets[key];
+                    AllSets.Sets.Remove(key);
+                    AllSets.Sets[newName] = set;
                     Save();
-                    UpdateSetsComboBox(newName);
+                    UpdateSetsComboBox(newName, cbViewHiddenSets.Checked);
                 }
             }));
 
@@ -105,28 +107,31 @@ namespace EZBlastButtons.UI
 
                 if (!File.Exists(PluginConfigPath))
                 {
-                    AllSets = new SysDefHolder { Systems = new Dictionary<string, SystemDef>() };
-                    AllSets.Systems.Add("Default", new SystemDef() { Buttons = new List<MultiCorruptSettingsPack>() });
+                    AllSets = new EzBlastData { Sets = new Dictionary<string, ButtonSet>() };
+                    AllSets.Sets.Add("Default", new ButtonSet() { Buttons = new List<MultiCorruptSettingsPack>() });
                     Save();
                 }
                 else
                 {
-
-                    AllSets = saveSerializer.Deserialize<SysDefHolder>(File.ReadAllBytes(PluginConfigPath));
-                    //AllSets = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(PluginConfigPath));
-                    var extraFiles = Directory.GetFiles(PluginFolderPath).Where(x => x != PluginConfigPath && Path.GetExtension(x)?.ToLower() == ".json");
-                    foreach(var f in extraFiles)
+                    try
                     {
-                        try
+                        AllSets = saveSerializer.Deserialize<EzBlastData>(File.ReadAllBytes(PluginConfigPath));
+                    }
+                    catch (Exception ex)
+                    {
+                        var dlr = MessageBox.Show($"ERROR: Easy Manual Blast Buttons config deserialization error.{Environment.NewLine}Create a new button config? A copy of the old file will be saved.", 
+                            "Ez Blast Buttons config load error.", 
+                            MessageBoxButtons.YesNo, MessageBoxIcon.Error);
+                        if(dlr == DialogResult.Yes)
                         {
-                            ImportSilent(f);
-                            File.Delete(f);
-                        }
-                        catch
-                        {
-                            MessageBox.Show($"File {f} is not a valid ez blast file", "Invalid file", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            File.Copy(PluginConfigPath, Path.Combine(Path.GetDirectoryName(PluginConfigPath),$"{Path.GetFileNameWithoutExtension(PluginConfigPath)}_{string.Format("{0:X}", DateTime.Now.ToFileTimeUtc())}.bkup"));
+                            File.Delete(PluginConfigPath);
+                            AllSets = new EzBlastData { Sets = new Dictionary<string, ButtonSet>() };
+                            AllSets.Sets.Add("Default", new ButtonSet() { Buttons = new List<MultiCorruptSettingsPack>() });
+                            Save();
                         }
                     }
+
                     Save();
                 }
             }
@@ -136,7 +141,7 @@ namespace EZBlastButtons.UI
                 throw ex;
             }
 
-            UpdateSetsComboBox();
+            UpdateSetsComboBox(null, cbViewHiddenSets.Checked);
 
 
 
@@ -152,50 +157,23 @@ namespace EZBlastButtons.UI
             if(addButton != null)
             {
                 //TODO: warning for unsupported buttons
-                addButton.Enabled = C.IsEngineSupported(cbSelectedEngine.SelectedIndex);
+                if (C.IsEngineSupported(RtcCore.SelectedEngine))
+                {
+                    addButton.ContextMenu = addButtonContextMenu;
+                }
+                else
+                {
+                    addButton.ContextMenu = null;
+                }
             }
         }
 
         void Import(string file)
         {
-
-            //List<string> duplicates = new List<string>();
-            //bool hasDuplicates = false;
-            //var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(file));
-            //foreach (var item in import.Systems)
-            //{
-            //    if (!AllSets.Systems.ContainsKey(item.Key))
-            //    {
-            //        AllSets.Systems.Add(item.Key, item.Value);
-            //    }
-            //    else
-            //    {
-            //        hasDuplicates = true;
-            //        duplicates.Add(item.Key);
-            //    }
-            //}
-            //Save();
-            //UpdateSetsComboBox(cbSelectedEngine.SelectedItem.ToString());
-            //Populate();
-
-            //if (hasDuplicates)
-            //{
-            //    MessageBox.Show($"The following sets were duplicates and not imported:{string.Join(", ", duplicates)}", "Duplicate Sets", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            //}
         }
 
         void ImportSilent(string file)
         {
-            //return;
-            //var import = saveSerializer.Deserialize<SysDefHolder>(File.ReadAllBytes(file));
-            ////var import = JsonConvert.DeserializeObject<SysDefHolder>(File.ReadAllText(file));
-            //foreach (var item in import.Systems)
-            //{
-            //    if (!AllSets.Systems.ContainsKey(item.Key))
-            //    {
-            //        AllSets.Systems.Add(item.Key, item.Value);
-            //    }
-            //}
         }
 
         private string[] GetValidDomains(params string[] doms)
@@ -231,25 +209,49 @@ namespace EZBlastButtons.UI
             }
         }
 
-        private void UpdateSetsComboBox(string prevItem = null)
+        private void UpdateSetsComboBox(string prevItem = null, bool showHidden = false)
         {
             updating = true;
-            cbSelectedEngine.Items.Clear();
-            foreach (var item in AllSets.Systems)
+            cbSelectedSet.SuspendLayout();
+            int restrictCt = 0;
+            //List<string> cores = new List<string>();
+            cbSelectedSet.Items.Clear();
+            var curCore = (AllSpec.VanguardSpec[VSPEC.SYSTEM] as string);
+            //cores.Add(showHidden.ToString());
+
+            foreach (var item in AllSets.Sets)
             {
-                cbSelectedEngine.Items.Add(item.Key);
-            }
-            updating = false;
-            if (cbSelectedEngine.Items.Count > 0)
-            {
-                if (prevItem == null)
+                if (item.Value.RestrictCore)
                 {
-                    cbSelectedEngine.SelectedIndex = 0;//ind > -1 ? ind : 0;
-                    curSys = AllSets.Systems[cbSelectedEngine.SelectedItem.ToString()];
+                    if (showHidden || item.Value.EmulatorCore == curCore)
+                    {
+                        cbSelectedSet.Items.Add(item.Key);
+                        //cores.Add(item.Value.EmulatorCore);
+                    }
+                    else
+                    {
+                        restrictCt++;
+                    }
                 }
                 else
                 {
-                    cbSelectedEngine.SelectedIndex = cbSelectedEngine.Items.IndexOf(prevItem);
+                    cbSelectedSet.Items.Add(item.Key);
+                }
+            }
+            //lblCurCore.Text = $"Current Core: {curCore}, Restricted: {restrictCt}, Extra:{string.Join(", ",cores)}";
+
+            cbSelectedSet.ResumeLayout();
+            updating = false;
+            if (cbSelectedSet.Items.Count > 0)
+            {
+                if (prevItem == null)
+                {
+                    cbSelectedSet.SelectedIndex = 0;
+                    curButtonSet = AllSets.Sets[cbSelectedSet.SelectedItem.ToString()];
+                }
+                else
+                {
+                    cbSelectedSet.SelectedIndex = cbSelectedSet.Items.IndexOf(prevItem);
                 }
             }
             else
@@ -266,11 +268,16 @@ namespace EZBlastButtons.UI
             {
                 multiTB_Intensity.Maximum = maxintensity;
             }
+            if(S.GET<SavestateManagerForm>().CurrentSaveStateStashKey == null)
+            {
+                cbGH.Checked = false;
+            }
+
         }
 
         private void PluginForm_Load(object sender, EventArgs e)
         {
-            prevDoms = DomHash(S.GET<MemoryDomainsForm>().lbMemoryDomains.Items);//.GetHashCode();
+            prevDoms = DomHash(S.GET<MemoryDomainsForm>().lbMemoryDomains.Items);
             S.GET<MemoryDomainsForm>().lbMemoryDomains.SelectedIndexChanged += LbMemoryDomains_SelectedIndexChanged;
             Populate();
         }
@@ -280,36 +287,6 @@ namespace EZBlastButtons.UI
         {
             return true;
             //TODO: validation for new system
-
-
-            //var hashNameDic = Filtering.Hash2NameDico; //cache from allspec
-
-
-
-            //if (EngineSettings.EngineType == CorruptionEngine.VECTOR)
-            //    {
-            //        EngineSettings.CachedSpec[RTCSPEC.VECTOR_LIMITERLISTHASH]
-
-            //}
-
-            //if (hashNameDic.Values.Contains(EngineSettings.Limiter) && hashNameDic.Values.Contains(EngineSettings.Value))
-            //{
-            //    var doms = S.GET<MemoryDomainsForm>().lbMemoryDomains.Items;
-            //    bool hasValidDomain = false;
-            //    foreach (var dom in EngineSettings.Domains)
-            //    {
-            //        if (doms.Contains(dom))
-            //        {
-            //            hasValidDomain = true;
-            //            break;
-            //        }
-            //    }
-            //    return hasValidDomain;
-            //}
-            //else
-            //{
-            //    return false;
-            //}
         }
 
         private void AddButton(MultiCorruptSettingsPack engineSettings)
@@ -325,11 +302,11 @@ namespace EZBlastButtons.UI
                 }
             }
 
-            bool hiddenAllowed = cbViewHidden.Checked;
+            bool hiddenAllowed = cbViewHiddenButtons.Checked;
 
             if (isValid || hiddenAllowed)
             {
-                EzBlastButtonControl b = new EzBlastButtonControl(engineSettings, isValid ? pForm.cbSelectedEngine.BackColor : Color.DarkRed);
+                EzBlastButtonControl b = new EzBlastButtonControl(engineSettings, isValid ? pForm.cbSelectedSet.BackColor : Color.DarkRed);
                 b.Clicked += EzBlastButton_Click;
                 b.Deleted += EzBlastButton_Deleted;
                 b.Edit += EzBlastButton_Edit;
@@ -354,9 +331,17 @@ namespace EZBlastButtons.UI
 
         private void EzBlastButton_Deleted(EzBlastButtonControl ebb)
         {
-            curSys.Buttons.Remove(ebb.Pack);
+            curButtonSet.Buttons.Remove(ebb.Pack);
             gbButtons.Controls.Remove(ebb);
             Save();
+        }
+
+
+        float GetMultiplier()
+        {
+            if (rbSizeLarge.Checked) return 2.0f;
+            else if (rbSizeSmall.Checked) return 0.5f;
+            else return 1.0f;
         }
 
         private void EzBlastButton_Click(EzBlastButtonControl ebb)
@@ -365,10 +350,11 @@ namespace EZBlastButtons.UI
             try
             {
                 ebb.Enabled = false;
-
                 var cbE = S.GET<CorruptionEngineForm>().cbSelectedEngine;
-                cbE.SelectedIndex = C.NightmareEngineIndex;
-                cbE.SelectedIndex = PluginCore.EngineIndex;
+                //cbE.SelectedIndex = 0;
+                cbE.SelectedIndex = C.EZBlastEngineIndex;
+
+                LocalNetCoreRouter.Route(PluginRouting.Endpoints.EMU_SIDE, PluginRouting.Commands.UPDATE_SHARED_SETTINGS, new EZBlastSharedSettings(GetMultiplier(),-1), true);
                 LocalNetCoreRouter.Route(PluginRouting.Endpoints.EMU_SIDE, PluginRouting.Commands.UPDATE_SETTINGS, ebb.Pack, true);
                 if (this.cbGH.Checked)
                 {
@@ -390,21 +376,21 @@ namespace EZBlastButtons.UI
 
         private void Populate()
         {
-            if (curSys != null)
+            if (curButtonSet != null)
             {
                 gbButtons.Controls.Clear();
-                if (curSys.Buttons.Count > 0)
+                if (curButtonSet.Buttons.Count > 0)
                 {
-                    foreach (var item in curSys.Buttons)
+                    foreach (var item in curButtonSet.Buttons)
                     {
-                        AddButton(item);//, item.Name, item.Limiter, item.Value, item.Intensity, item.Domains);
+                        AddButton(item);
                     }
                 }
-                AddAddButton();
+                CreateAddButton();
             }
         }
 
-        private void AddAddButton()
+        private void CreateAddButton()
         {
             Button b = new Button()
             {
@@ -412,24 +398,32 @@ namespace EZBlastButtons.UI
                 Text = "Add Button..",
                 Height = 50,
                 Width = 150,
-                BackColor = pForm.cbSelectedEngine.BackColor,
-                ForeColor = Color.White,
+                BackColor = pForm.cbSelectedSet.BackColor,
+                ForeColor = Color.Lime,
                 Font = new Font("Segoe UI", 8),
                 UseVisualStyleBackColor = false,
                 FlatStyle = FlatStyle.Flat,
-                Tag = "color:light1"
+                Tag = "color:light1",
+                Cursor = Cursors.Hand
             };
 
-            ContextMenu c = new ContextMenu(new MenuItem[] { new MenuItem("Quick Add\r\n(Current Engine Settings)", QuickAdd) });
-            b.ContextMenu = c;
+            addButtonContextMenu = new ContextMenu(new MenuItem[] {
+                new MenuItem("Quick Add (Dynamic Intensity)", QuickAddPercentage),
+                new MenuItem("Quick Add (Keep Current Intensity)", QuickAddForced),
+                new MenuItem("Add Advanced..", CreateNewConfig),
+            });
+            b.ContextMenu = addButtonContextMenu;
 
-
-            b.Click += CreateNewConfig;
-            gbButtons.Controls.Add(b);
             addButton = b;
+            b.Click += (o,e) => {
+                Button btnSender = (Button)o;
+                Point ptLowerLeft = new Point(0, btnSender.Height);
+                addButtonContextMenu.Show(btnSender,ptLowerLeft);
+            };
+            gbButtons.Controls.Add(b);
         }
 
-        private void QuickAdd(object sender, EventArgs e)
+        private void QuickAddForced(object sender, EventArgs e)
         {
             EngineSettings quickSetting;
 
@@ -438,9 +432,9 @@ namespace EZBlastButtons.UI
                 case CorruptionEngine.NIGHTMARE:
                     quickSetting = new EngineSettings(NightmareEngine.getDefaultPartial());
                     break;
-                case CorruptionEngine.HELLGENIE:
-                    quickSetting = new EngineSettings(HellgenieEngine.getDefaultPartial());
-                    break;
+                //case CorruptionEngine.HELLGENIE:
+                //    quickSetting = new EngineSettings(HellgenieEngine.getDefaultPartial());
+                //    break;
                 case CorruptionEngine.DISTORTION:
                     quickSetting = new EngineSettings(DistortionEngine.getDefaultPartial());
                     break;
@@ -457,7 +451,7 @@ namespace EZBlastButtons.UI
                     quickSetting = new EngineSettings(ClusterEngine.getDefaultPartial());
                     break;
                 default:
-                    MessageBox.Show("Cannot add unsupported engine type");
+                    MessageBox.Show("Current engine type is not supported for EzBlast Buttons", "Unable To Add Button", MessageBoxButtons.OK,MessageBoxIcon.Warning);
                     return;
             }
 
@@ -479,7 +473,64 @@ namespace EZBlastButtons.UI
             pack.AddSetting(quickSetting);
             pack.Name = buttonName;
 
-            curSys.Buttons.Add(pack);
+            curButtonSet.Buttons.Add(pack);
+            AddButton(pack);
+            Save();
+            RestoreAddButton();
+        }
+
+
+        private void QuickAddPercentage(object sender, EventArgs e)
+        {
+            EngineSettings quickSetting;
+
+            switch (RtcCore.SelectedEngine)
+            {
+                case CorruptionEngine.NIGHTMARE:
+                    quickSetting = new EngineSettings(NightmareEngine.getDefaultPartial());
+                    break;
+                //case CorruptionEngine.HELLGENIE:
+                //    quickSetting = new EngineSettings(HellgenieEngine.getDefaultPartial());
+                //    break;
+                case CorruptionEngine.DISTORTION:
+                    quickSetting = new EngineSettings(DistortionEngine.getDefaultPartial());
+                    break;
+                case CorruptionEngine.FREEZE:
+                    quickSetting = new EngineSettings(null);
+                    break;
+                case CorruptionEngine.PIPE:
+                    quickSetting = new EngineSettings(null);
+                    break;
+                case CorruptionEngine.VECTOR:
+                    quickSetting = new EngineSettings(VectorEngine.getDefaultPartial());
+                    break;
+                case CorruptionEngine.CLUSTER:
+                    quickSetting = new EngineSettings(ClusterEngine.getDefaultPartial());
+                    break;
+                default:
+                    MessageBox.Show("Current engine type is not supported for EzBlast Buttons", "Unable To Add Button", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return;
+            }
+
+            var buttonName = Prompt.ShowDialog("Choose Button Name", "EZ Button Name");
+
+
+            if (string.IsNullOrWhiteSpace(buttonName))
+            {
+                return;
+            }
+
+            quickSetting.DisplayName = C.EngineString(RtcCore.SelectedEngine) + " (Quick Add)";
+            quickSetting.Extract(settingsControl);
+            string[] domainList = new List<string>(S.GET<MemoryDomainsForm>().lbMemoryDomains.SelectedItems.Cast<string>()).ToArray();
+            quickSetting.Domains = domainList;
+
+            quickSetting.Percentage = 1.0;
+            MultiCorruptSettingsPack pack = new MultiCorruptSettingsPack();
+            pack.AddSetting(quickSetting);
+            pack.Name = buttonName;
+
+            curButtonSet.Buttons.Add(pack);
             AddButton(pack);
             Save();
             RestoreAddButton();
@@ -489,11 +540,12 @@ namespace EZBlastButtons.UI
         {
             if(addButton == null)
             {
-                AddAddButton();
+                CreateAddButton();
             }
             else
             {
                 gbButtons.Controls.Add(addButton);
+                addButton.ContextMenu = addButtonContextMenu;
 
             }
             //addButton = b;
@@ -506,9 +558,9 @@ namespace EZBlastButtons.UI
 
             if(buttonConfigForm.ShowDialog() == DialogResult.OK)
             {
-                ((Button)sender).Click -= CreateNewConfig;
-                gbButtons.Controls.Remove((Control)sender);
-                curSys.Buttons.Add(buttonConfigForm.Pack);
+                //((Button)sender).Click -= CreateNewConfig;
+                gbButtons.Controls.Remove(addButton);// (Control)sender);
+                curButtonSet.Buttons.Add(buttonConfigForm.Pack);
                 AddButton(buttonConfigForm.Pack);
                 Save();
                 RestoreAddButton();
@@ -556,9 +608,10 @@ namespace EZBlastButtons.UI
         {
             if (!updating)
             {
-                if (AllSets.Systems.ContainsKey(cbSelectedEngine.SelectedItem.ToString()))
+                if (AllSets.Sets.ContainsKey(cbSelectedSet.SelectedItem.ToString()))
                 {
-                    curSys = AllSets.Systems[cbSelectedEngine.SelectedItem.ToString()];
+                    curButtonSet = AllSets.Sets[cbSelectedSet.SelectedItem.ToString()];
+                    lblCoreRestrict.Text = $"Restrict: {curButtonSet.RestrictCore}, Core: {curButtonSet.EmulatorCore}";
                     Populate();
                 }
             }
@@ -580,25 +633,32 @@ namespace EZBlastButtons.UI
 
         private void bNewSet_Click(object sender, EventArgs e)
         {
-            string s = Prompt.ShowDialog("Name", "Enter Set Name");
-            if (!string.IsNullOrWhiteSpace(s))
+            var csf = new CreateSetForm();
+            if(csf.ShowDialog() == DialogResult.OK)
             {
-                if (AllSets.Systems.ContainsKey(s))
+                string s = csf.Value;// Prompt.ShowDialog("Name", "Enter Set Name");
+                if (!string.IsNullOrWhiteSpace(s))
                 {
-                    MessageBox.Show("Set already exists", "Set already exists", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
+                    if (AllSets.Sets.ContainsKey(s))
+                    {
+                        MessageBox.Show("Set already exists", "Set already exists", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        return;
+                    }
+                    var set = new ButtonSet() { Buttons = new List<MultiCorruptSettingsPack>() };
+                    if (csf.RestrictCore) {
+                        set.AssignCore(AllSpec.VanguardSpec[VSPEC.SYSTEM] as string);
+                    }
+                    AllSets.Sets.Add(s, set);
+                    Save();
+                    updating = true;
+                    cbSelectedSet.Items.Clear();
+                    foreach (var item in AllSets.Sets)
+                    {
+                        cbSelectedSet.Items.Add(item.Key);
+                    }
+                    updating = false;
+                    cbSelectedSet.SelectedIndex = cbSelectedSet.Items.IndexOf(s);
                 }
-
-                AllSets.Systems.Add(s, new SystemDef() { Buttons = new List<MultiCorruptSettingsPack>() });
-                Save();
-                updating = true;
-                cbSelectedEngine.Items.Clear();
-                foreach (var item in AllSets.Systems)
-                {
-                    cbSelectedEngine.Items.Add(item.Key);
-                }
-                updating = false;
-                cbSelectedEngine.SelectedIndex = cbSelectedEngine.Items.IndexOf(s);
             }
         }
 
@@ -630,17 +690,17 @@ namespace EZBlastButtons.UI
 
         private void bDeleteSet_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show($"Permanently delete set {cbSelectedEngine.SelectedItem.ToString()}?", "Delete Set", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.OK)
+            if (MessageBox.Show($"Permanently delete set {cbSelectedSet.SelectedItem.ToString()}?", "Delete Set", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning) == DialogResult.OK)
             {
-                string key = cbSelectedEngine.SelectedItem.ToString();
-                var set = AllSets.Systems[key];
-                AllSets.Systems.Remove(key);
-                if (AllSets.Systems.Count == 0)
+                string key = cbSelectedSet.SelectedItem.ToString();
+                var set = AllSets.Sets[key];
+                AllSets.Sets.Remove(key);
+                if (AllSets.Sets.Count == 0)
                 {
-                    AllSets.Systems.Add("Default", new SystemDef() { Buttons = new List<MultiCorruptSettingsPack>() });
+                    AllSets.Sets.Add("Default", new ButtonSet() { Buttons = new List<MultiCorruptSettingsPack>() });
                 }
                 Save();
-                UpdateSetsComboBox();
+                UpdateSetsComboBox(null, cbViewHiddenSets.Checked);
                 Populate();
             }
         }
@@ -650,5 +710,24 @@ namespace EZBlastButtons.UI
             Populate();
         }
 
+        private void bRefresh_Click(object sender, EventArgs e)
+        {
+            foreach (var button in gbButtons.Controls)
+            {
+                if(button is EzBlastButtonControl b)
+                {
+                    b.ValidateEngines();
+                }
+            }
+
+            string key = cbSelectedSet.SelectedItem?.ToString();
+            UpdateSetsComboBox(key, cbViewHiddenSets.Checked);
+        }
+
+        private void cbViewHiddenSets_CheckedChanged(object sender, EventArgs e)
+        {
+            string key = cbSelectedSet.SelectedItem?.ToString();
+            UpdateSetsComboBox(key, cbViewHiddenSets.Checked);
+        }
     }
 }

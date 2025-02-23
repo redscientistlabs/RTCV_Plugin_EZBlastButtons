@@ -13,9 +13,6 @@ namespace EZBlastButtons
         void Apply()
         {
             C.CacheMasterSpec();
-
-
-
         }
 
     }

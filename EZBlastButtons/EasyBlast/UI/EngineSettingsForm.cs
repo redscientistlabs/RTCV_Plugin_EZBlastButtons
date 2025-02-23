@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using EZBlastButtons.Structures;
+using EZBlastButtons.UI;
 using RTCV;
 using RTCV.Common;
 using RTCV.CorruptCore;
@@ -21,46 +22,38 @@ namespace EZBlastButtons
 {
     public partial class EngineSettingsForm : ComponentForm, IColorize
     {
-        //string curEngine = "None";
         CorruptionEngineForm settingsControl;
 
-        //private CorruptionEngineForm mainSettings;
         public EngineSettings OutputSettings { get; private set; } = null;
         EngineSettings edit = null;
-        //private MemoryDomainsForm myDomains;
 
         bool settingsPopoutAllowed = false;
-        //Panel prevPanel = null;
 
         public EngineSettingsForm()
         {
             InitializeComponent();
 
             //TODO: get plugin engines too
-            //previousPrecision = RtcCore.CurrentPrecision;
             bAdd.Enabled = false;
 
             Setup();
 
-            Shown += ShownNoEdit;
 
+            Shown += ShownNoEdit;
             FormClosing += EngineSettingsForm_FormClosing;
         }
 
         private async void ShownNoEdit(object sender, EventArgs e)
         {
-            //await Task.Delay(1500);
-            //mySettings.cbCustomPrecision.SelectedIndex = C.PrecisionToIndex(previousPrecision);
-            //SetPrecisionIndex(previousPrecision);
-            settingsControl.cbSelectedEngine.SelectedIndex = C.NightmareEngineIndex;
+            settingsControl.cbSelectedEngine.SelectedIndex = 0;
             bAdd.Enabled = true;
+            CustomEngine.LoadTemplate("Nightmare Engine");
         }
 
         public EngineSettingsForm(EngineSettings edit)
         {
             InitializeComponent();
-            //previousPrecision = RtcCore.CurrentPrecision;
-            //editPrecision = edit.Precision;
+
             bAdd.Enabled = false;
 
             Setup();
@@ -81,15 +74,24 @@ namespace EZBlastButtons
             bAdd.Text = "Save";
             this.Shown += ShownEdit;
             FormClosing += EngineSettingsForm_FormClosing;
-            //pSettings.Controls.Add(cSettings);
         }
-
 
         private async void ShownEdit(object sender, EventArgs e)
         {
             edit.ApplyPartial();
+
+
             settingsControl.cbSelectedEngine.SelectedIndex = edit.EngineIndex;
             settingsControl.ResyncAllEngines();
+
+            //Need to update settings manually for custom engine
+            //if(edit.EngineType == CorruptionEngine.CUSTOM)
+            //{
+            //    edit.CacheCustomEngine();
+            //    CustomEngine.LoadTemplateFile(PluginForm.CustomEngineCachePath);
+            //}
+
+           
             bAdd.Enabled = true;
             nmIntensity.Value = (decimal)(edit.Percentage * 100.0);
             tbName.Text = edit.DisplayName ?? "";
@@ -121,12 +123,10 @@ namespace EZBlastButtons
             settingsControl.cbSelectedEngine.SelectedIndexChanged += CheckEngineCompatability;
 
             //Detach from previous location
-            //Anchor to previous idk
-            //settingsControl.AnchorToPanel(settingsControl.Parent as Panel);
-            settingsPopoutAllowed = settingsControl.popoutAllowed;
-            settingsControl.popoutAllowed = false;
+            settingsPopoutAllowed = settingsControl.PopoutAllowed;
+            settingsControl.PopoutAllowed = false;
 
-            //prevPanel = settingsControl.Parent as Panel;
+            //Attach and ensure visible
             settingsControl.AnchorToPanel(pSettings);
             settingsControl.Show();
             UISideHooks.KillSwitchFired += UISideHooks_KillSwitchFired;
@@ -160,7 +160,8 @@ namespace EZBlastButtons
 
         private void CheckEngineCompatability(object sender, EventArgs e)
         {
-            bool supported = C.IsEngineSupported(((ComboBox)sender).SelectedIndex);
+            //((ComboBox)sender).SelectedIndex
+            bool supported = C.IsEngineSupported(RtcCore.SelectedEngine);
             bAdd.Enabled = supported;
             imgWarning.Visible = !supported;
         }
@@ -174,9 +175,9 @@ namespace EZBlastButtons
                 case CorruptionEngine.NIGHTMARE:
                     OutputSettings = new EngineSettings(NightmareEngine.getDefaultPartial());
                     break;
-                case CorruptionEngine.HELLGENIE:
-                    OutputSettings = new EngineSettings(HellgenieEngine.getDefaultPartial());
-                    break;
+                //case CorruptionEngine.HELLGENIE:
+                //    OutputSettings = new EngineSettings(HellgenieEngine.getDefaultPartial());
+                //    break;
                 case CorruptionEngine.DISTORTION:
                     OutputSettings = new EngineSettings(DistortionEngine.getDefaultPartial());
                     break;
@@ -191,6 +192,9 @@ namespace EZBlastButtons
                     break;
                 case CorruptionEngine.CLUSTER:
                     OutputSettings = new EngineSettings(ClusterEngine.getDefaultPartial());
+                    break;
+                case CorruptionEngine.CUSTOM:
+                    OutputSettings = new EngineSettings(CustomEngine.getCurrentConfigSpec());
                     break;
                 default:
                     break;
@@ -231,12 +235,20 @@ namespace EZBlastButtons
         private void EngineSettingsForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             settingsControl.cbCustomPrecision.SelectedIndexChanged -= CheckEngineCompatability;
-            //Needed for restore to work
+
             this.Visible = false;
+
             //Give the settings control back to rtc window
-            //settingsControl.RestoreToPreviousPanel();
-            settingsControl.ParentComponentFormTitle.ReAnchorToPanel();
-            settingsControl.popoutAllowed = settingsPopoutAllowed;
+            if(settingsControl.ParentComponentFormTitle != null)
+            {
+                settingsControl.ParentComponentFormTitle.ReAnchorToPanel();
+            }
+            else
+            {
+                //IDK if this will actually work
+                settingsControl.RestoreToPreviousPanel();
+            }
+            settingsControl.PopoutAllowed = settingsPopoutAllowed;
         }
 
         private void UISideHooks_KillSwitchFired()
@@ -244,7 +256,7 @@ namespace EZBlastButtons
             UISideHooks.KillSwitchFired -= UISideHooks_KillSwitchFired;
             FormClosing -= EngineSettingsForm_FormClosing;
             settingsControl.cbCustomPrecision.SelectedIndexChanged -= CheckEngineCompatability;
-            settingsControl.popoutAllowed = settingsPopoutAllowed;
+            settingsControl.PopoutAllowed = settingsPopoutAllowed;
             DialogResult = DialogResult.Abort;
             //settingsControl.AnchorToPanel();
             Close();
