@@ -77,16 +77,6 @@ namespace EZBlastButtons.Structures
             partial[RTCSPEC.CORE_USEALIGNMENT] = RtcCore.UseAlignment;
             partial[RTCSPEC.CORE_CREATEINFINITEUNITS] = RtcCore.CreateInfiniteUnits;
 
-
-            //if (EngineType == CorruptionEngine.CUSTOM)
-            //{
-            //    //partial[RTCSPEC.CUSTOM_NAME] = AllSpec.CorruptCoreSpec[RTCSPEC.CUSTOM_NAME];
-            //    //pSpec[RTCSPEC.CUSTOM_PATH] = path;
-            //    //pSpec[RTCSPEC.CORE_CURRENTPRECISION] = RtcCore.CurrentPrecision;
-            //   // pSpec[RTCSPEC.CORE_CURRENTALIGNMENT] = RtcCore.Alignment;
-            //}
-
-
             cachedSpec = partial;
             EngineType = RtcCore.SelectedEngine;
 
@@ -110,11 +100,6 @@ namespace EZBlastButtons.Structures
                 string lim = ((ComboBoxItem<string>)settingsControl.ClusterEngineControl.cbClusterLimiterList.SelectedItem).Name;
                 ExtraData[0] = lim;
             }
-
-            //if (EngineType == CorruptionEngine.CUSTOM)
-            //{
-            //    CacheCustomEngine();
-            //}
 
             UpdateCache();
         }

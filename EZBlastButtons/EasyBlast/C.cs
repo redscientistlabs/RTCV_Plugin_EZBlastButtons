@@ -40,7 +40,6 @@ namespace EZBlastButtons
 
         public static CorruptionEngine EngineFromName(string engineName)
         {
-
             if (string.IsNullOrWhiteSpace(engineName)) return CorruptionEngine.NONE;
 
             foreach (var esi in EngineSupportInfos)
@@ -131,7 +130,7 @@ namespace EZBlastButtons
                 new EngineSupportInfo(PipeEngineStr, null, CorruptionEngine.PIPE),
                 new EngineSupportInfo(DistortionEngineStr, DistortionEngine.getDefaultPartial, CorruptionEngine.DISTORTION),
                 new EngineSupportInfo(ClusterEngineStr, ClusterEngine.getDefaultPartial, CorruptionEngine.CLUSTER),
-                new EngineSupportInfo(CustomEngineStr, CustomEngine.getCurrentConfigSpec, CorruptionEngine.CUSTOM)
+                //new EngineSupportInfo(CustomEngineStr, CustomEngine.getCurrentConfigSpec, CorruptionEngine.CUSTOM)
             };
 
             InitMasterSpec();
